@@ -11,6 +11,7 @@ Configs::Configs(Adafruit_ST7735 *tft, int *st, Button *btn)
   value = 0;
 }
 
+//--------------------------------------------------------------------
 void Configs::init()
 {
   uint16 temperature1, hyst, calib;
@@ -39,6 +40,7 @@ void Configs::init()
   }
 }
 
+//--------------------------------------------------------------------
 void Configs::validateConfigs()
 {
   if (temp1 < MIN_TEMP_VAL || temp1 > MAX_TEMP_VAL ||
@@ -49,6 +51,7 @@ void Configs::validateConfigs()
   }
 }
 
+//--------------------------------------------------------------------
 void Configs::setPos(int position)
 {
   // Delete old Square background
@@ -62,6 +65,7 @@ void Configs::setPos(int position)
   //drawMenu(text, nItems);
 }
 
+//--------------------------------------------------------------------
 void Configs::prepareEditScreen(const char text[][STRING_LENGTH])
 {
   char tbs[6];
@@ -88,11 +92,16 @@ void Configs::prepareEditScreen(const char text[][STRING_LENGTH])
     value = MIN_CAL_VAL;
     printValue(calibration);
     break;
+  case 3:
+    *screenTask = TEST;
+    leaveMenus();
+    break;
   default:
     break;
   }
 }
 
+//--------------------------------------------------------------------
 void Configs::printLargeValue()
 {
   // Clean
@@ -106,6 +115,7 @@ void Configs::printLargeValue()
   _tft->print(value);
 }
 
+//--------------------------------------------------------------------
 void Configs::drawMenu(const char text[][STRING_LENGTH], int nItems)
 {
   int i;
@@ -133,6 +143,7 @@ void Configs::drawMenu(const char text[][STRING_LENGTH], int nItems)
   }
 }
 
+//--------------------------------------------------------------------
 void Configs::printValue(int val)
 {
   _tft->print(' ');
@@ -141,6 +152,7 @@ void Configs::printValue(int val)
   _tft->println('C');
 }
 
+//--------------------------------------------------------------------
 void Configs::startConfig()
 {
   screen = MAIN;
@@ -154,14 +166,18 @@ void Configs::startConfig()
   _btn->clear();
 }
 
+//--------------------------------------------------------------------
 void Configs::leaveMenus()
 {
   screen = DUMMY;
-  *screenTask = PENDING;
-  _tft->fillScreen(ST7735_BLACK);
+  if (*screenTask != TEST)
+  {
+    *screenTask = PENDING;
+  }
   _btn->clear();
 }
 
+//--------------------------------------------------------------------
 void Configs::startTest()
 {
   screen = DUMMY;
@@ -170,6 +186,7 @@ void Configs::startTest()
   _btn->clear();
 }
 
+//--------------------------------------------------------------------
 void Configs::run()
 {
   int position, out;
@@ -262,31 +279,39 @@ void Configs::run()
   }
 }
 
+//--------------------------------------------------------------------
 int Configs::getTemp()
 {
   return temp1;
 }
 
+//--------------------------------------------------------------------
 int Configs::getHyst()
 {
   return hysteresis;
 }
 
+//--------------------------------------------------------------------
 int Configs::getCalibration()
 {
   return calibration;
 }
 
+//--------------------------------------------------------------------
 void Configs::saveTemp()
 {
   EEPROM.write(EEPROM.PageBase0 + BASE_ADDRESS, (uint16)value);
   temp1 = value;
 }
+
+//--------------------------------------------------------------------
 void Configs::saveHyst()
 {
   EEPROM.write(EEPROM.PageBase0 + BASE_ADDRESS + 4, (uint16)value);
   hysteresis = value;
 }
+
+//--------------------------------------------------------------------
 void Configs::saveCalibration()
 {
   uint16 val = (uint16)(value + abs(MIN_CAL_VAL));

@@ -22,7 +22,7 @@ void ElectroController::run(int temp)
         trunOffSpeed0();
 
         // Next state
-        if (temperature > (temp1 + (float)hysteresis / 2))
+        if (temp > (temp1 + hysteresis))
         {
             state = SPEED0;
         }
@@ -33,11 +33,11 @@ void ElectroController::run(int temp)
         trunOnSpeed0();
 
         // Next state
-        if (temperature < (temp1 - (float)hysteresis / 2))
+        if (temp < (temp1 - hysteresis))
         {
             state = IDLE;
         }
-        if (temperature > (temp1 + DUAL_HYST_FACTOR * (float)hysteresis / 2))
+        if (temp > (temp1 + DUAL_HYST_FACTOR * hysteresis))
         {
             state = SPEED1;
         }
@@ -49,11 +49,11 @@ void ElectroController::run(int temp)
         turnOffBuzzer();
 
         // Next state
-        if (temperature < temp1)
+        if (temp < temp1)
         {
             state = SPEED0;
         }
-        if (temperature > TMAX)
+        if (temp > TMAX)
         {
             state = ALARM;
         }
@@ -64,7 +64,7 @@ void ElectroController::run(int temp)
         turnOnBuzzer();
 
         // Next state
-        if (temperature < TMAX)
+        if (temp < TMAX)
         {
             state = SPEED1;
         }
@@ -153,6 +153,12 @@ int ElectroController::getErrorCode()
 int ElectroController::getTemperature()
 {
     return temperature;
+}
+
+//--------------------------------------------------------------------
+void ElectroController::setTemperature(int temp)
+{
+    temperature = temp;
 }
 
 //--------------------------------------------------------------------

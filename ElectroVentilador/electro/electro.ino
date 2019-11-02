@@ -33,6 +33,12 @@ Button btn = Button();
 
 int screenTask = WORK;
 
+// Simulator
+unsigned int lastTimeUpdated = 0;
+int simulatedTemperature = SIM_Tmin - 1;
+bool simulationAscend = true;
+bool testPrepared = false;
+
 // Configurations
 Configs cfgs = Configs(&tft, &screenTask, &btn);
 
@@ -69,10 +75,20 @@ void loop()
 {
   btn.run();
   cfgs.run();
-  controller.run();
-  hmi.update(controller.getTemperature(),
-             controller.getFanSpeed(),
-             controller.getErrorCode());
+  if (screenTask != TEST)
+  {
+    controller.run();
+    hmi.update(controller.getTemperature(),
+               controller.getFanSpeed(),
+               controller.getErrorCode());
+  }
+  else
+  {
+    controller.run(simulatorGetTemp());
+    hmi.update(simulatorGetTemp(),
+               controller.getFanSpeed(),
+               controller.getErrorCode());
+  }
   verifyConfigChanges();
 }
 
@@ -88,4 +104,42 @@ void verifyConfigChanges()
 
     screenTask = WORK;
   }
+  if (screenTask == TEST && !testPrepared)
+  {
+    controller.setTemp1(cfgs.getTemp());
+    controller.setHysteresis(cfgs.getHyst());
+    controller.setCalibration(cfgs.getCalibration());
+
+    hmi.drawHMItemplate(ST7735_WHITE);
+
+    testPrepared = true;
+  }
+}
+
+int simulatorGetTemp()
+{
+  if (millis() - lastTimeUpdated > SIM_INTERVAL)
+  {
+    if (simulationAscend)
+    {
+      simulatedTemperature++;
+      if (simulatedTemperature >= SIM_Tmax)
+      {
+        simulationAscend = false;
+      }
+    }
+    else
+    {
+      simulatedTemperature--;
+      if (simulatedTemperature < SIM_Tmin)
+      {
+        screenTask = WORK;
+        testPrepared = false;
+        simulationAscend = true;
+      }
+    }
+    lastTimeUpdated = millis();
+  }
+
+  return simulatedTemperature;
 }

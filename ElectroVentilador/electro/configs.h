@@ -22,15 +22,22 @@
 #define MAX_HYST_VAL 6
 
 // PINOUT
-#define PIN_NTC  PA0
-#define PIN_BUZ  PB15
+#define PIN_NTC PA0
+#define PIN_BUZ PB15
 #define PIN_FAN0 PA9
 #define PIN_FAN1 PA8
+
+// Simulator
+#define SIM_Tmin 70
+#define SIM_Tmax 110
+#define SIM_INTERVAL 500 // ms
 
 // Fan Speeds
 enum fan_speeds
 {
-  FAN_STOP, FAN_SPEED_1, FAN_SPEED_2
+  FAN_STOP,
+  FAN_SPEED_1,
+  FAN_SPEED_2
 };
 
 // Dual means 2 speed fan
@@ -43,15 +50,19 @@ enum fan_speeds
 #define MAX_VAL_CODE 4000
 enum error_codes
 {
-    NO_ERROR,
-    SHORT_CIRCUIT,
-    OPEN_CIRCUIT
+  NO_ERROR,
+  SHORT_CIRCUIT,
+  OPEN_CIRCUIT
 };
 
 // Screen tasks
 enum tasks
 {
-  WORK, CONFIG, TEST, PENDING, ERROR
+  WORK,
+  CONFIG,
+  TEST,
+  PENDING,
+  ERROR
 };
 
 // Screens
@@ -69,40 +80,39 @@ enum screens
 
 // Main Screen
 #define MAIN_ITEMS 4
-PROGMEM const char mainText[MAIN_ITEMS][STRING_LENGTH] = {" Temperatura", 
+PROGMEM const char mainText[MAIN_ITEMS][STRING_LENGTH] = {" Temperatura",
                                                           "  Histeresis",
-                                                          "   Calibrar ", 
+                                                          "   Calibrar ",
                                                           "    Prueba  "};
 
 // ---------- HMI --------------
 // Thermometer icon
-#define Xicon  140
-#define Yicon  110
-#define Rtherm  3
-#define Htherm  12
-#define Wtherm  3
-#define SPACEmarks  4
-#define Wmarks  1
-#define Lmarks  5
-#define SPACEwaves  5
-#define Wwaves  4
-#define Hwaves  2
+#define Xicon 140
+#define Yicon 110
+#define Rtherm 3
+#define Htherm 12
+#define Wtherm 3
+#define SPACEmarks 4
+#define Wmarks 1
+#define Lmarks 5
+#define SPACEwaves 5
+#define Wwaves 4
+#define Hwaves 2
 
 // Analog indicator
-#define MAXangle  90
-#define Nmarks  5
-#define OUTERradius  100
-#define INNERradius  90
-#define INNERneedle  60
+#define MAXangle 90
+#define Nmarks 5
+#define OUTERradius 100
+#define INNERradius 90
+#define INNERneedle 60
 #define NEEDLEbase 3
-#define GAUGEx  105
-#define GAUGEy  123
+#define GAUGEx 105
+#define GAUGEy 123
 #define MAXindicator 110
 #define MINindicator 40
 
-
 // Temperature refresh interval
-#define TEMP_DELAY 1000 // ms
+#define TEMP_DELAY 500 // ms
 
 // ----------- Fan --------------
 #define Xfan 120

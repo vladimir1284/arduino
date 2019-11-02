@@ -17,6 +17,7 @@ public:
     ElectroController();
 
     void run(),
+        setTemperature(int temp),
         run(int temp),
         init(int ntcPin, int buzzerPin, int speed0Pin,
              int speed1Pin, int temp1, int hysteresis,
