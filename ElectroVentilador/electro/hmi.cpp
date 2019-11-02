@@ -19,22 +19,19 @@ void ThermHMI::drawHMItemplate(int color)
 
 void ThermHMI::drawFan(int color)
 {
-  _tft->fillRect(Xfan, Yfan, 48, 48, ST7735_BLACK);
   _tft->drawBitmap(Xfan, Yfan, fan0, Wfan, Hfan, color);
 }
 
-void ThermHMI::animateFan(int speed)
+void ThermHMI::animateFan(int speed, int color)
 {
-  int fan_delay, color;
+  int fan_delay;
   if (speed == FAN_SPEED_1)
   {
     fan_delay = SLOWdelay;
-    color = ST7735_WHITE;
   }
   else
   {
     fan_delay = FASTdelay;
-    color = ST7735_BLUE;
   }
   if (millis() - lastTimeFanChanged > fan_delay)
   {
@@ -76,12 +73,7 @@ void ThermHMI::update(int tempValue, int fanSpeed)
 
   if (fanSpeed != FAN_STOP)
   {
-    animateFan(fanSpeed);
-  }
-  else if (millis() - lastTimeFanChanged < 3000)
-  {
-    drawFan(ST7735_WHITE);
-    lastTimeFanChanged = 0; 
+    animateFan(fanSpeed, ST7735_WHITE);
   }
 }
 
@@ -163,36 +155,71 @@ void ThermHMI::drawMarks(int color)
   y0 = GAUGEy - out * sin(angle / 6);
   x1 = GAUGEx - in * cos(angle / 6);
   y1 = GAUGEy - in * sin(angle / 6);
-  x2 = GAUGEx - out * cos(2 * angle / 6);
-  y2 = GAUGEy - out * sin(2 * angle / 6);
-  x3 = GAUGEx - in * cos(2 * angle / 6);
-  y3 = GAUGEy - in * sin(2 * angle / 6);
-  _tft->fillTriangle(x0, y0, x1, y1 - 1, x2, y2 + 1, ST7735_WHITE);
-  _tft->fillTriangle(x1, y1 - 1, x3, y3, x2, y2 + 1, ST7735_WHITE);
+  x2 = GAUGEx - out * cos(3 * angle / 6);
+  y2 = GAUGEy - out * sin(3 * angle / 6);
+  x3 = GAUGEx - in * cos(3 * angle / 6);
+  y3 = GAUGEy - in * sin(3 * angle / 6);
+  _tft->fillTriangle(x0, y0, x1, y1, x2, y2, ST7735_WHITE);
+  _tft->fillTriangle(x1, y1, x3, y3, x2, y2, ST7735_WHITE);
 
   // Hot
-  x0 = GAUGEx - out * cos(22 * angle / 6);
-  y0 = GAUGEy - out * sin(22 * angle / 6);
-  x1 = GAUGEx - in * cos(22 * angle / 6);
-  y1 = GAUGEy - in * sin(22 * angle / 6);
+  x0 = GAUGEx - out * cos(21 * angle / 6);
+  y0 = GAUGEy - out * sin(21 * angle / 6);
+  x1 = GAUGEx - in * cos(21 * angle / 6);
+  y1 = GAUGEy - in * sin(21 * angle / 6);
   x2 = GAUGEx - out * cos(23 * angle / 6);
   y2 = GAUGEy - out * sin(23 * angle / 6);
   x3 = GAUGEx - in * cos(23 * angle / 6);
   y3 = GAUGEy - in * sin(23 * angle / 6);
-  _tft->fillTriangle(x0, y0, x1, y1 - 1, x2, y2 + 1, ST7735_RED);
-  _tft->fillTriangle(x1 - 1, y1 - 1, x3, y3, x2, y2 + 1, ST7735_RED);
+  _tft->fillTriangle(x0, y0, x1, y1, x2, y2, ST7735_RED);
+  _tft->fillTriangle(x1, y1, x3, y3, x2, y2, ST7735_RED);
 
-  // OK
-  x0 = GAUGEx - out * cos(13 * angle / 6);
-  y0 = GAUGEy - out * sin(13 * angle / 6);
-  x1 = GAUGEx - in * cos(13 * angle / 6);
-  y1 = GAUGEy - in * sin(13 * angle / 6);
-  x2 = GAUGEx - out * cos(14 * angle / 6);
-  y2 = GAUGEy - out * sin(14 * angle / 6);
-  x3 = GAUGEx - in * cos(14 * angle / 6);
-  y3 = GAUGEy - in * sin(14 * angle / 6);
-  _tft->fillTriangle(x0 + 1, y0 + 2, x1, y1 + 1, x2 + 1, y2 + 1, ST7735_GREEN);
-  _tft->fillTriangle(x1, y1 + 1, x3, y3, x2 + 1, y2 + 1, ST7735_GREEN);
+  // // OK
+  // x0 = GAUGEx - out * cos(13 * angle / 6);
+  // y0 = GAUGEy - out * sin(13 * angle / 6);
+  // x1 = GAUGEx - in * cos(13 * angle / 6);
+  // y1 = GAUGEy - in * sin(13 * angle / 6);
+  // x2 = GAUGEx - out * cos(15 * angle / 6);
+  // y2 = GAUGEy - out * sin(15 * angle / 6);
+  // x3 = GAUGEx - in * cos(15 * angle / 6);
+  // y3 = GAUGEy - in * sin(15 * angle / 6);
+  // _tft->fillTriangle(x0, y0, x1, y1, x2, y2, ST7735_GREEN);
+  // _tft->fillTriangle(x1, y1, x3, y3, x2, y2, ST7735_GREEN);
+  minAngle = 13 * angle / 6;
+  maxAngle = 15 * angle / 6;
+  x0 = GAUGEx - (out + in) / 2 * cos((minAngle + maxAngle) / 2);
+  y0 = GAUGEy - (out + in) / 2 * sin((minAngle + maxAngle) / 2);
+  arcFill(x0, y0, in, out, minAngle, maxAngle, ST7735_GREEN);
+  // nbeams = 12;
+  // deltaAngle = (maxAngle - minAngle)/(nbeams-1);
+  // for (i = 0; i < nbeams; i++)
+  // {
+  //   x0 = GAUGEx - out * cos(minAngle+i*deltaAngle);
+  //   y0 = GAUGEy - out * sin(minAngle+i*deltaAngle);
+  //   x1 = GAUGEx - in * cos(minAngle+i*deltaAngle);
+  //   y1 = GAUGEy - in * sin(minAngle+i*deltaAngle);
+  //   _tft->drawLine(x0,y0,x1,y1,ST7735_GREEN);
+  //}
+}
+
+void ThermHMI::arcFill(int x, int y, int minRadius, int maxRadius,
+                       float minAngle, float maxAngle, int color)
+{
+  int radius = sqrt(pow((GAUGEx - x), 2) + pow((GAUGEy - y), 2));
+  float angulo = atan2(GAUGEy - y, GAUGEx - x);
+  if ((radius <= maxRadius) && (radius >= minRadius) &&
+      (angulo <= maxAngle) && (angulo >= minAngle))
+  {
+    _tft->drawPixel(x, y, color);
+    arcFill(x + 1, y, minRadius, maxRadius, minAngle, maxAngle, color);
+    arcFill(x, y + 1, minRadius, maxRadius, minAngle, maxAngle, color);
+    arcFill(x - 1, y, minRadius, maxRadius, minAngle, maxAngle, color);
+    arcFill(x, y - 1, minRadius, maxRadius, minAngle, maxAngle, color);
+    // arcFill(x + 1, y + 1, minRadius, maxRadius, minAngle, maxAngle, color);
+    // arcFill(x - 1, y + 1, minRadius, maxRadius, minAngle, maxAngle, color);
+    // arcFill(x - 1, y - 1, minRadius, maxRadius, minAngle, maxAngle, color);
+    // arcFill(x + 1, y - 1, minRadius, maxRadius, minAngle, maxAngle, color);
+  }
 }
 
 void ThermHMI::drawIcon(int color)

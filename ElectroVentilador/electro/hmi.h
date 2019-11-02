@@ -41,12 +41,14 @@ class ThermHMI {
  private:
   Adafruit_ST7735  *_tft;
   Configs *_cfgs;
-  void animateFan(int speed),
+  void animateFan(int speed, int color),
        drawFan(int color),
        drawIcon(int color),
        drawMarks(int color),
        drawNeedle(int value, int color),
-       updateTemp(int value, int color);
+       updateTemp(int value, int color),
+       arcFill(int x, int y, int minRadius, int maxRadius, 
+                        float minAngle,float maxAngle, int color);
 
   unsigned int lastTimeFanChanged, lastTimeTempUdated;
   int current_value, fan;
@@ -60,6 +62,11 @@ class ThermHMI {
 #define Hfan 39
 #define SLOWdelay 500 // ms
 #define FASTdelay 250 // ms
+
+enum fan_speeds
+{
+  FAN_STOP, FAN_SPEED_1, FAN_SPEED_2
+};
 
 
 

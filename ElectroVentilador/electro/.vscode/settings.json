@@ -2,8 +2,6 @@
     "files.associations": {
         "*.tcc": "cpp",
         "unordered_map": "cpp",
-        "cmath": "cpp",
-        "array": "cpp",
-        "string_view": "cpp"
+        "cmath": "cpp"
     }
 }
