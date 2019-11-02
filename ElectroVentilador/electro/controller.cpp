@@ -119,15 +119,34 @@ void ElectroController::init(int ntcPin, int buzzerPin, int speed0Pin,
 int ElectroController::readTemperature()
 {
     int val = analogRead(pinNTC);
-    double Temp;
-    Temp = log(((40960000 / val) - 10000));
-    Temp = 1 / (0.001129148 + (0.000234125 + (0.0000000876741 * Temp * Temp)) * Temp);
-    Temp = Temp - 273.15; // Converierte de Kelvin a Celsius
-    filter.insertValue(Temp + calibration);
-    //filter.insertValue((int)Temp);
-    temperature = filter.getValue();
-    //temperature = (int)Temp;
+    // Validate sensor conection
+    if (val < MIN_VAL_CODE)
+    {
+        error_code = OPEN_CIRCUIT;
+    }
+    else if (val > MAX_VAL_CODE)
+    {
+        error_code = SHORT_CIRCUIT;
+    }
+    else
+    {
+        error_code = NO_ERROR;
+        
+        // Compute temperature
+        double Temp;
+        Temp = log(((40960000 / val) - 10000));
+        Temp = 1 / (0.001129148 + (0.000234125 + (0.0000000876741 * Temp * Temp)) * Temp);
+        Temp = Temp - 273.15; // Converierte de Kelvin a Celsius
+        filter.insertValue(Temp + calibration);
+        temperature = filter.getValue();
+    }
     return temperature;
+}
+
+//--------------------------------------------------------------------
+int ElectroController::getErrorCode()
+{
+    return error_code;
 }
 
 //--------------------------------------------------------------------

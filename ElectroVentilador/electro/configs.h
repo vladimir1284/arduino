@@ -33,10 +33,25 @@ enum fan_speeds
   FAN_STOP, FAN_SPEED_1, FAN_SPEED_2
 };
 
+// Dual means 2 speed fan
+#define DUAL true
+#define DUAL_HYST_FACTOR 2
+#define TMAX 105
+
+// Sensor error
+#define MIN_VAL_CODE 100
+#define MAX_VAL_CODE 4000
+enum error_codes
+{
+    NO_ERROR,
+    SHORT_CIRCUIT,
+    OPEN_CIRCUIT
+};
+
 // Screen tasks
 enum tasks
 {
-  WORK, CONFIG, TEST, PENDING
+  WORK, CONFIG, TEST, PENDING, ERROR
 };
 
 // Screens
@@ -59,6 +74,45 @@ PROGMEM const char mainText[MAIN_ITEMS][STRING_LENGTH] = {" Temperatura",
                                                           "   Calibrar ", 
                                                           "    Prueba  "};
 
+// ---------- HMI --------------
+// Thermometer icon
+#define Xicon  140
+#define Yicon  110
+#define Rtherm  3
+#define Htherm  12
+#define Wtherm  3
+#define SPACEmarks  4
+#define Wmarks  1
+#define Lmarks  5
+#define SPACEwaves  5
+#define Wwaves  4
+#define Hwaves  2
+
+// Analog indicator
+#define MAXangle  90
+#define Nmarks  5
+#define OUTERradius  100
+#define INNERradius  90
+#define INNERneedle  60
+#define NEEDLEbase 3
+#define GAUGEx  105
+#define GAUGEy  123
+#define MAXindicator 110
+#define MINindicator 40
+
+
+// Temperature refresh interval
+#define TEMP_DELAY 1000 // ms
+
+// ----------- Fan --------------
+#define Xfan 120
+#define Yfan 0
+#define Wfan 39
+#define Hfan 39
+#define SLOWdelay 500 // ms
+#define FASTdelay 250 // ms
+
+// -----------------------------
 
 class Configs
 {

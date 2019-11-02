@@ -11,19 +11,23 @@ ThermHMI::ThermHMI(Adafruit_ST7735 *tft, int *st, Configs *cfgs)
   screenTask = st;
 }
 
+//--------------------------------------------------------------------
 void ThermHMI::drawHMItemplate(int color)
 {
+  _tft->fillScreen(ST7735_BLACK);
   drawIcon(ST7735_WHITE);
   drawFan(ST7735_WHITE);
   drawMarks(ST7735_WHITE);
 }
 
+//--------------------------------------------------------------------
 void ThermHMI::drawFan(int color)
 {
   _tft->fillRect(Xfan, Yfan, 48, 48, ST7735_BLACK);
   _tft->drawBitmap(Xfan, Yfan, fan0, Wfan, Hfan, color);
 }
 
+//--------------------------------------------------------------------
 void ThermHMI::animateFan(int speed)
 {
   int fan_delay, color;
@@ -54,41 +58,86 @@ void ThermHMI::animateFan(int speed)
   }
 }
 
-void ThermHMI::update(int tempValue, int fanSpeed)
+//--------------------------------------------------------------------
+void ThermHMI::update(int tempValue, int fanSpeed, int error_code)
 {
-  if (*screenTask == WORK)
+  if (error_code == NO_ERROR)
   {
-    if (millis() - lastTimeTempUdated > TEMP_DELAY)
+    last_error_shown = NO_ERROR;
+    if (*screenTask == ERROR)
     {
-      int color;
-      if (tempValue < (_cfgs->getTemp() - 2 * _cfgs->getHyst()))
-      {
-        color = ST7735_WHITE;
-      }
-      else if (tempValue < (_cfgs->getTemp() + 2 * _cfgs->getHyst()))
-      {
-        color = ST7735_GREEN;
-      }
-      else
-      {
-        color = ST7735_RED;
-      }
-      updateTemp(tempValue, color);
-      lastTimeTempUdated = millis();
+      *screenTask = PENDING;
     }
+    if (*screenTask == WORK || *screenTask == TEST)
+    {
+      if (millis() - lastTimeTempUdated > TEMP_DELAY)
+      {
+        int color;
+        if (tempValue < (_cfgs->getTemp() - 2 * _cfgs->getHyst()))
+        {
+          color = ST7735_WHITE;
+        }
+        else if (tempValue < (_cfgs->getTemp() + 2 * _cfgs->getHyst()))
+        {
+          color = ST7735_GREEN;
+        }
+        else
+        {
+          color = ST7735_RED;
+        }
+        updateTemp(tempValue, color);
+        lastTimeTempUdated = millis();
+      }
 
-    if (fanSpeed != FAN_STOP)
-    {
-      animateFan(fanSpeed);
+      if (fanSpeed != FAN_STOP)
+      {
+        animateFan(fanSpeed);
+      }
+      else if (millis() - lastTimeFanChanged < 3000)
+      {
+        drawFan(ST7735_WHITE);
+        lastTimeFanChanged = 0;
+      }
     }
-    else if (millis() - lastTimeFanChanged < 3000)
-    {
-      drawFan(ST7735_WHITE);
-      lastTimeFanChanged = 0;
-    }
+  }
+  else
+  {
+    // Error detected
+    showError(error_code);
   }
 }
 
+//--------------------------------------------------------------------
+void ThermHMI::showError(int error_code)
+{
+  *screenTask = ERROR;
+  if (last_error_shown != error_code)
+  {
+    _tft->setTextColor(ST7735_RED, ST7735_BLACK);
+    _tft->setTextSize(2);
+    _tft->fillScreen(ST7735_BLACK);
+    _tft->setCursor(0, 0);
+    _tft->println();
+    _tft->println(" Sensor en");
+    switch (error_code)
+    {
+    case SHORT_CIRCUIT:
+      _tft->println("  Corto");
+      _tft->println(" Circuito");
+      break;
+    case OPEN_CIRCUIT:
+      _tft->println(" Circuito");
+      _tft->println(" Abierto");
+      break;
+    default:
+      break;
+    }
+
+    last_error_shown = error_code;
+  }
+}
+
+//--------------------------------------------------------------------
 void ThermHMI::drawNeedle(int value, int color)
 {
   float angle;
@@ -116,6 +165,7 @@ void ThermHMI::drawNeedle(int value, int color)
   _tft->fillTriangle(x3, y3, x1, y1, x2, y2, color);
 }
 
+//--------------------------------------------------------------------
 void ThermHMI::updateTemp(int value, int color)
 {
   int xShift = 64;
@@ -148,6 +198,7 @@ void ThermHMI::updateTemp(int value, int color)
   _tft->print(value);
 }
 
+//--------------------------------------------------------------------
 void ThermHMI::drawMarks(int color)
 {
   int i, x0, y0, x1, y1, x2, y2, x3, y3, out, in, nbeams;
@@ -199,6 +250,7 @@ void ThermHMI::drawMarks(int color)
   _tft->fillTriangle(x1, y1 + 1, x3, y3, x2 + 1, y2 + 1, ST7735_GREEN);
 }
 
+//--------------------------------------------------------------------
 void ThermHMI::drawIcon(int color)
 {
   // --------------- Draw icon -------------------------

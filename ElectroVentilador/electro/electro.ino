@@ -70,7 +70,9 @@ void loop()
   btn.run();
   cfgs.run();
   controller.run();
-  hmi.update(controller.getTemperature(), controller.getFanSpeed());
+  hmi.update(controller.getTemperature(),
+             controller.getFanSpeed(),
+             controller.getErrorCode());
   verifyConfigChanges();
 }
 

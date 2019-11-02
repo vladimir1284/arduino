@@ -2,11 +2,6 @@
 #include "configs.h"
 #include "mean_filter.h"
 
-#define DUAL true
-#define DUAL_HYST_FACTOR 2
-#define TMAX 105
-
-
 enum states
 {
     IDLE,
@@ -14,7 +9,6 @@ enum states
     SPEED1,
     ALARM
 };
-
 
 class ElectroController
 {
@@ -32,6 +26,7 @@ public:
         setCalibration(int cal);
 
     int getTemperature(),
+        getErrorCode(),
         getFanSpeed();
 
 private:
@@ -42,9 +37,10 @@ private:
         temp1,
         hysteresis,
         calibration,
+        error_code,
         temperature;
 
-    states state;    
+    states state;
     MeanFilter filter;
 
     int readTemperature();
