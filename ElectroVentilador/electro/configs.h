@@ -14,18 +14,29 @@
 #define BASE_ADDRESS 0
 
 // Validation values for parameters
-#define MIN_CAL_VAL -10
-#define MAX_CAL_VAL 10
+#define MIN_CAL_VAL -5
+#define MAX_CAL_VAL 5
 #define MIN_TEMP_VAL 65
 #define MAX_TEMP_VAL 85
 #define MIN_HYST_VAL 3
 #define MAX_HYST_VAL 6
 
+// PINOUT
+#define PIN_NTC  PA0
+#define PIN_BUZ  PB15
+#define PIN_FAN0 PA9
+#define PIN_FAN1 PA8
+
+// Fan Speeds
+enum fan_speeds
+{
+  FAN_STOP, FAN_SPEED_1, FAN_SPEED_2
+};
 
 // Screen tasks
 enum tasks
 {
-  WORK, CONFIG, TEST
+  WORK, CONFIG, TEST, PENDING
 };
 
 // Screens

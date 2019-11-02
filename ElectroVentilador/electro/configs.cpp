@@ -157,7 +157,7 @@ void Configs::startConfig()
 void Configs::leaveMenus()
 {
   screen = DUMMY;
-  *screenTask = WORK;
+  *screenTask = PENDING;
   _tft->fillScreen(ST7735_BLACK);
   _btn->clear();
 }
