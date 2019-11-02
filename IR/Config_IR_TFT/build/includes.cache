@@ -1,0 +1,132 @@
+[
+  {
+    "Sourcefile": "",
+    "Include": "",
+    "Includepath": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/cores/maple"
+  },
+  {
+    "Sourcefile": "",
+    "Include": "",
+    "Includepath": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/variants/generic_stm32f103c"
+  },
+  {
+    "Sourcefile": "/home/vladimir/Documentos/SOFTWARE/arduino/BluePill/Demos/IR/Config_IR_TFT/build/sketch/Config_IR_TFT.ino.cpp",
+    "Include": "Adafruit_GFX.h",
+    "Includepath": "/home/vladimir/Arduino/libraries/Adafruit_GFX"
+  },
+  {
+    "Sourcefile": "/home/vladimir/Documentos/SOFTWARE/arduino/BluePill/Demos/IR/Config_IR_TFT/build/sketch/Config_IR_TFT.ino.cpp",
+    "Include": "Adafruit_ST7735.h",
+    "Includepath": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/libraries/Adafruit_ST7735"
+  },
+  {
+    "Sourcefile": "/home/vladimir/Documentos/SOFTWARE/arduino/BluePill/Demos/IR/Config_IR_TFT/build/sketch/Config_IR_TFT.ino.cpp",
+    "Include": "Adafruit_GFX_AS.h",
+    "Includepath": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/libraries/Adafruit_GFX_AS"
+  },
+  {
+    "Sourcefile": "/home/vladimir/Documentos/SOFTWARE/arduino/BluePill/Demos/IR/Config_IR_TFT/build/sketch/Config_IR_TFT.ino.cpp",
+    "Include": "SPI.h",
+    "Includepath": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/libraries/SPI/src"
+  },
+  {
+    "Sourcefile": "/home/vladimir/Documentos/SOFTWARE/arduino/BluePill/Demos/IR/Config_IR_TFT/build/sketch/Config_IR_TFT.ino.cpp",
+    "Include": "irmp.h",
+    "Includepath": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/libraries/Irmp"
+  },
+  {
+    "Sourcefile": "/home/vladimir/Documentos/SOFTWARE/arduino/BluePill/Demos/IR/Config_IR_TFT/build/sketch/Config_IR_TFT.ino.cpp",
+    "Include": "EEPROM.h",
+    "Includepath": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/libraries/EEPROM"
+  },
+  {
+    "Sourcefile": "/home/vladimir/Documentos/SOFTWARE/arduino/BluePill/Demos/IR/Config_IR_TFT/build/sketch/Config_IR_TFT.ino.cpp",
+    "Include": "",
+    "Includepath": ""
+  },
+  {
+    "Sourcefile": "/home/vladimir/Documentos/SOFTWARE/arduino/BluePill/Demos/IR/Config_IR_TFT/build/sketch/TankParameters.cpp",
+    "Include": "",
+    "Includepath": ""
+  },
+  {
+    "Sourcefile": "/home/vladimir/Documentos/SOFTWARE/arduino/BluePill/Demos/IR/Config_IR_TFT/build/sketch/configs_ir.cpp",
+    "Include": "",
+    "Includepath": ""
+  },
+  {
+    "Sourcefile": "/home/vladimir/Arduino/libraries/Adafruit_GFX/Adafruit_GFX.cpp",
+    "Include": "",
+    "Includepath": ""
+  },
+  {
+    "Sourcefile": "/home/vladimir/Arduino/libraries/Adafruit_GFX/glcdfont.c",
+    "Include": "",
+    "Includepath": ""
+  },
+  {
+    "Sourcefile": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/libraries/Adafruit_ST7735/Adafruit_ST7735.cpp",
+    "Include": "",
+    "Includepath": ""
+  },
+  {
+    "Sourcefile": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/libraries/Adafruit_GFX_AS/Adafruit_GFX_AS.cpp",
+    "Include": "",
+    "Includepath": ""
+  },
+  {
+    "Sourcefile": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/libraries/Adafruit_GFX_AS/Font16.c",
+    "Include": "",
+    "Includepath": ""
+  },
+  {
+    "Sourcefile": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/libraries/Adafruit_GFX_AS/Font32.c",
+    "Include": "",
+    "Includepath": ""
+  },
+  {
+    "Sourcefile": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/libraries/Adafruit_GFX_AS/Font64.c",
+    "Include": "",
+    "Includepath": ""
+  },
+  {
+    "Sourcefile": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/libraries/Adafruit_GFX_AS/Font7s.c",
+    "Include": "",
+    "Includepath": ""
+  },
+  {
+    "Sourcefile": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/libraries/Adafruit_GFX_AS/glcdfont.c",
+    "Include": "",
+    "Includepath": ""
+  },
+  {
+    "Sourcefile": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/libraries/SPI/src/SPI.cpp",
+    "Include": "",
+    "Includepath": ""
+  },
+  {
+    "Sourcefile": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/libraries/Irmp/irmp.cpp",
+    "Include": "",
+    "Includepath": ""
+  },
+  {
+    "Sourcefile": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/libraries/Irmp/irmpextlog.cpp",
+    "Include": "",
+    "Includepath": ""
+  },
+  {
+    "Sourcefile": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/libraries/Irmp/irsnd.cpp",
+    "Include": "",
+    "Includepath": ""
+  },
+  {
+    "Sourcefile": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/libraries/EEPROM/EEPROM.cpp",
+    "Include": "",
+    "Includepath": ""
+  },
+  {
+    "Sourcefile": "/home/vladimir/.arduino15/packages/stm32duino/hardware/STM32F1/2019.3.31/libraries/EEPROM/flash_stm32.c",
+    "Include": "",
+    "Includepath": ""
+  }
+]

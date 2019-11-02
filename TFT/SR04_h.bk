@@ -1,0 +1,38 @@
+/***************************************************
+  This library handles SR04 by using Timer 3 of blue pill.
+
+ ****************************************************/
+
+#include <Arduino.h>
+#include "median_filter.h"
+
+#define PULSEWIDTH 10        // microseconds
+#define OVERFLOW_VALUE 65000 // 65ms cycle
+#define PRESCALER_VALUE 72   // 1us clock
+
+// Pinout configuration
+#define nSensors 2
+#define triggerPin PB15
+int SENSOR_PINS[nSensors] = {PA8, PA9}; // Echo pins
+
+extern volatile int lastVal[nSensors],
+    newValue[nSensors],
+    oldCount[nSensors];
+
+extern MedianFilter mf[nSensors];
+
+class SR04
+{
+
+public:
+    SR04();
+
+    static void run(),
+        begin();
+    static int getDistance(int sensor);
+
+private:
+    static void handler_trigger_on(),
+        handler_trigger_off(),
+        exti_handler();
+};

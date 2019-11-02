@@ -8,6 +8,7 @@
 #include <SPI.h>
 #include "hmi.h"
 #include "configs.h"
+#include "controller.h"
 
 unsigned int lastUpdated = 0;
 int speed, temp;
@@ -38,6 +39,8 @@ Configs cfgs = Configs(&tft, &screenTask, &btn);
 // HMI
 ThermHMI hmi = ThermHMI(&tft, &cfgs);
 
+// Controller
+ElectroController controller = ElectroController();
 
 void setup(void)
 {
@@ -56,18 +59,25 @@ void setup(void)
   // Init HMI
   hmi.drawHMItemplate(ST7735_WHITE);
   hmi.update(81,FAN_STOP);
+
+  // Init the controller
+  controller.init(PIN_NTC, PIN_BUZ, PIN_FAN0, PIN_FAN1, 
+                  cfgs.getTemp(), cfgs.getHyst(), 
+                  cfgs.getCalibration());
 }
 
 void loop()
 {
   btn.run();
   cfgs.run();
-  hmi.update(temp,speed);
-  if (millis()-lastUpdated>3000){
-    speed = random(0,2);
-    temp = random(30,110);
-    lastUpdated = millis();
-  }
+  controller.run();
+  hmi.update(controller.getTemperature(),controller.getFanSpeed());
+
+  // if (millis()-lastUpdated>3000){
+  //   speed = random(0,3);
+  //   temp = random(30,110);
+  //   lastUpdated = millis();
+  // }
 
 }
 
