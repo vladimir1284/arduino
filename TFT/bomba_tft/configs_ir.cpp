@@ -11,6 +11,7 @@ IRConfigs::IRConfigs(Adafruit_ST7735 *tft, bool *LOCK_SCREEN) {
   lockScreen = LOCK_SCREEN;
 }
 
+//----------------------------------------------------------------------------------
 void IRConfigs::timer2_init ()
 {
     timer.pause();
@@ -26,6 +27,7 @@ void IRConfigs::timer2_init ()
     timer.resume();
 }
   
+//----------------------------------------------------------------------------------
 void IRConfigs::init(TankParameters *uTank, TankParameters *lTank)                                                       // Timer2 Interrupt Handler
 {
 // Initialize IR receiber
@@ -43,16 +45,19 @@ void IRConfigs::init(TankParameters *uTank, TankParameters *lTank)              
   currentTank = lowerTank;
 }
   
+//----------------------------------------------------------------------------------
 void IRConfigs::TIM2_IRQHandler()                                                       // Timer2 Interrupt Handler
 {
   (void) irmp_ISR(); // call irmp ISR   
 }
 
+//----------------------------------------------------------------------------------
 void IRConfigs::setPos(const char text[][STRING_LENGTH], int nItems, int position){
   pos = position;
   drawMenu(text, nItems);
 }
 
+//----------------------------------------------------------------------------------
 void IRConfigs::drawTankParameters(){
   char tbs[6];
   newStr = "";
@@ -74,6 +79,7 @@ void IRConfigs::drawTankParameters(){
   _tft->print(tbs);
 }
 
+//----------------------------------------------------------------------------------
 void IRConfigs::prepareEditScreen(){
   char tbs[6];
   char line[20];
@@ -104,6 +110,7 @@ void IRConfigs::prepareEditScreen(){
 
 }
 
+//----------------------------------------------------------------------------------
 void IRConfigs::printParameterValue(int bg_color){
   // Clean
   _tft->setTextColor(ST7735_WHITE, ST7735_BLACK);
@@ -116,7 +123,7 @@ void IRConfigs::printParameterValue(int bg_color){
   _tft->print(newStr);
 }
 
-
+//----------------------------------------------------------------------------------
 void IRConfigs::drawMenu(const char text[][STRING_LENGTH], int nItems){
   int i;
   _tft->setTextSize(2);
@@ -137,6 +144,7 @@ void IRConfigs::leaveMenus(){
   _tft->fillScreen(ST7735_BLACK);
 }
 
+//----------------------------------------------------------------------------------
 void IRConfigs::run(){
   int position, out;
   

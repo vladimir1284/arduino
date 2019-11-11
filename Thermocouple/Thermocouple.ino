@@ -41,9 +41,9 @@ void setup()
   // pinMode(vccPin, OUTPUT); digitalWrite(vccPin, HIGH);
   // pinMode(gndPin, OUTPUT); digitalWrite(gndPin, LOW);
 
-  Serial.println("MAX6675 test");
-  // wait for MAX chip to stabilize
-  delay(500);
+  // Serial.println("MAX6675 test");
+  // // wait for MAX chip to stabilize
+  // delay(500);
 }
 
 void loop()

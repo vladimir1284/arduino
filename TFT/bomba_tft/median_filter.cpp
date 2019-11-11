@@ -9,6 +9,7 @@ MedianFilter::MedianFilter(){
   first = 0;
   head  = 0;}
 
+//----------------------------------------------------------------------------------
 int MedianFilter::getValue(){
 	int j, i = first;
 	for(j = 0; j < SIZE/2; j++){
@@ -26,6 +27,7 @@ void MedianFilter::insertValue(int newVal){
   insertNewValue(newVal);
 }
 
+//----------------------------------------------------------------------------------
 void MedianFilter::removeOldestValue(int oldestIndex){
   // Evaluate the first value
   if (oldestIndex == first){
@@ -42,7 +44,7 @@ void MedianFilter::removeOldestValue(int oldestIndex){
   }
 }
 
-
+//----------------------------------------------------------------------------------
 void MedianFilter::insertNewValue(int newValue){
   int i = first;
   bool stored = false;

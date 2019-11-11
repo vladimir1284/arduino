@@ -7,6 +7,7 @@ PumpHMI::PumpHMI(Adafruit_ST7735 *tft)
   _animationStage = 0;
 }
 
+//----------------------------------------------------------------------------------
 void PumpHMI::drawHMItemplate(int16_t lowerMin, int16_t upperMin) {
 
   // Setup thresholds
@@ -48,6 +49,7 @@ void PumpHMI::drawHMItemplate(int16_t lowerMin, int16_t upperMin) {
   
 }
 
+//----------------------------------------------------------------------------------
 void PumpHMI::updateLowerTankLevel(int16_t percent){
   int16_t h, color;
   h = percent*(h2-2)/100;
@@ -67,6 +69,7 @@ void PumpHMI::updateLowerTankLevel(int16_t percent){
   _tft->drawFastVLine(p3x-dout-din/2+d, h0-h2, h2, ST7735_WHITE);
 }
 
+//----------------------------------------------------------------------------------
 void PumpHMI::updateUpperTankLevel(int16_t percent){
   int16_t h, color;
   h = percent*(h1-2)/100;
@@ -82,7 +85,7 @@ void PumpHMI::updateUpperTankLevel(int16_t percent){
   _tft->fillRect(p1x+1, p1y-1-h, b1-1, h, color);  
 }
 
-
+//----------------------------------------------------------------------------------
 void PumpHMI::animate(){  
   // Delete old scuares
   _tft->fillRect(Xup[_animationStage], Yup[_animationStage], d-1, d-1, ST7735_BLACK);  

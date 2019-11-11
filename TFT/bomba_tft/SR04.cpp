@@ -18,11 +18,13 @@ HardwareTimer timerX(3);
 //MedianFilter mf1 = MedianFilter();
 MedianFilter filters[MAX_SENSORS] = {MedianFilter(), MedianFilter()};
 
+//----------------------------------------------------------------------------------
 int getLevel(int sensor)
 {
     return filters[sensor].getValue() / 58;
 }
 
+//----------------------------------------------------------------------------------
 void readSR04sensors()
 {
     int i;
@@ -37,6 +39,7 @@ void readSR04sensors()
     }
 }
 
+//----------------------------------------------------------------------------------
 void setupUltrasonicSensors(int trigerPin, int nSensors, int echoPins[])
 {
     int i;
@@ -75,6 +78,7 @@ void setupUltrasonicSensors(int trigerPin, int nSensors, int echoPins[])
     timerX.resume();
 }
 
+//----------------------------------------------------------------------------------
 void handler_trigger_on()
 {
     digitalWrite(trigger, HIGH);
@@ -85,6 +89,7 @@ void handler_trigger_off()
     digitalWrite(trigger, LOW);
 }
 
+//----------------------------------------------------------------------------------
 void exti_handler()
 {
     int i, val;
