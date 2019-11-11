@@ -63,12 +63,25 @@ void setup(void)
   cfgs.init();
 
   // Init HMI
-  hmi.drawHMItemplate(ST7735_WHITE);
+  if (screenTask == WORK)
+  {
+    hmi.drawHMItemplate(ST7735_WHITE);
+  }
 
   // Init the controller
   controller.init(PIN_NTC, PIN_BUZ, PIN_FAN0, PIN_FAN1,
                   cfgs.getTemp(), cfgs.getHyst(),
                   cfgs.getCalibration());
+
+  // Buzzer sound indicating ready
+  int i;
+  for (i = 0; i < 2; i++)
+  {
+    controller.turnOnBuzzer();
+    delay(INIT_BUZZ_DELAY);
+    controller.turnOffBuzzer();
+    delay(INIT_BUZZ_DELAY / 2);
+  }
 }
 
 void loop()

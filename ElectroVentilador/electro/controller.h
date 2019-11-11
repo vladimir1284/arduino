@@ -24,7 +24,9 @@ public:
              int calibration),
         setTemp1(int temp),
         setHysteresis(int hyst),
-        setCalibration(int cal);
+        setCalibration(int cal),
+        turnOnBuzzer(),
+        turnOffBuzzer();
 
     int getTemperature(),
         getErrorCode(),
@@ -46,9 +48,7 @@ private:
 
     int readTemperature();
 
-    void turnOnBuzzer(),
-        turnOffBuzzer(),
-        trunOnSpeed0(),
+    void trunOnSpeed0(),
         trunOffSpeed0(),
         trunOnSpeed1(),
         trunOffSpeed1();

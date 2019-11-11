@@ -6,18 +6,21 @@
 #include "button.h"
 
 // Time delay for returning to IDLE state
-#define WAITING_TIME 10000 // ms
+#define WAITING_TIME 11000 // ms
 // Time delay for changing between menu elements
 #define CHANGE_TIME 1000 // ms
 
 // Base address for storing configs
 #define BASE_ADDRESS 0
 
+// Delay ms for 
+#define INIT_BUZZ_DELAY 150
+
 // Validation values for parameters
 #define MIN_CAL_VAL -5
 #define MAX_CAL_VAL 5
-#define MIN_TEMP_VAL 65
-#define MAX_TEMP_VAL 85
+#define MIN_TEMP_VAL 75
+#define MAX_TEMP_VAL 85 
 #define MIN_HYST_VAL 3
 #define MAX_HYST_VAL 6
 
@@ -29,7 +32,7 @@
 
 // Simulator
 #define SIM_Tmin 70
-#define SIM_Tmax 110
+#define SIM_Tmax 100
 #define SIM_INTERVAL 500 // ms
 
 // Fan Speeds

@@ -224,6 +224,12 @@ void Configs::run()
     }
     break;
   case TEMP1:
+    if (millis() - lastTimePressed > WAITING_TIME)
+    {
+      screen = MAIN;
+      startConfig();
+      lastTimePressed = millis();
+    }
     if (millis() - lastTimeChanged > CHANGE_TIME)
     {
       if (++value > MAX_TEMP_VAL)
@@ -241,6 +247,12 @@ void Configs::run()
     }
     break;
   case HYST:
+    if (millis() - lastTimePressed > WAITING_TIME)
+    {
+      screen = MAIN;
+      startConfig();
+      lastTimePressed = millis();
+    }
     if (millis() - lastTimeChanged > CHANGE_TIME)
     {
       if (++value > MAX_HYST_VAL)
@@ -258,6 +270,12 @@ void Configs::run()
     }
     break;
   case CALIBRAR:
+    if (millis() - lastTimePressed > WAITING_TIME)
+    {
+      screen = MAIN;
+      startConfig();
+      lastTimePressed = millis();
+    }
     if (millis() - lastTimeChanged > CHANGE_TIME)
     {
       if (++value > MAX_CAL_VAL)
@@ -302,6 +320,7 @@ void Configs::saveTemp()
 {
   EEPROM.write(EEPROM.PageBase0 + BASE_ADDRESS, (uint16)value);
   temp1 = value;
+  validateConfigs();
 }
 
 //--------------------------------------------------------------------
@@ -309,6 +328,7 @@ void Configs::saveHyst()
 {
   EEPROM.write(EEPROM.PageBase0 + BASE_ADDRESS + 4, (uint16)value);
   hysteresis = value;
+  validateConfigs();
 }
 
 //--------------------------------------------------------------------
@@ -319,4 +339,5 @@ void Configs::saveCalibration()
   val = 0;
   EEPROM.read(EEPROM.PageBase0 + BASE_ADDRESS + 8, &val);
   calibration = value;
+  validateConfigs();
 }

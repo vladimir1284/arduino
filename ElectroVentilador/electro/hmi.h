@@ -1,6 +1,8 @@
 #include "Adafruit_ST7735.h"
 #include "configs.h"
 
+#define ORANGE_COLOR  0xFDEE
+
 class ThermHMI {
 
  public:
@@ -13,15 +15,15 @@ class ThermHMI {
   Adafruit_ST7735  *_tft;
   Configs *_cfgs;
   void animateFan(int speed),
-       drawFan(int color),
-       drawIcon(int color),
+       drawFan(),
+       drawIcon(),
        drawMarks(int color),
        drawNeedle(int value, int color),
-       updateTemp(int value, int color),
-       showError(int error_code);;
+       updateTemp(int value),
+       showError(int error_code);
 
   unsigned int lastTimeFanChanged, lastTimeTempUdated;
-  int current_value, fan, last_error_shown;
+  int current_value, fan, last_error_shown, indicator_color;
   int *screenTask;
   bool pendingClear;
 };

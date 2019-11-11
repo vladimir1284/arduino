@@ -9,37 +9,36 @@ ThermHMI::ThermHMI(Adafruit_ST7735 *tft, int *st, Configs *cfgs)
   lastTimeTempUdated = 0;
   pendingClear = false;
   screenTask = st;
+  indicator_color = ST7735_WHITE;
 }
 
 //--------------------------------------------------------------------
 void ThermHMI::drawHMItemplate(int color)
 {
   _tft->fillScreen(ST7735_BLACK);
-  drawIcon(ST7735_WHITE);
-  drawFan(ST7735_WHITE);
+  drawIcon();
+  drawFan();
   drawMarks(ST7735_WHITE);
 }
 
 //--------------------------------------------------------------------
-void ThermHMI::drawFan(int color)
+void ThermHMI::drawFan()
 {
   _tft->fillRect(Xfan, Yfan, 48, 48, ST7735_BLACK);
-  _tft->drawBitmap(Xfan, Yfan, fan0, Wfan, Hfan, color);
+  _tft->drawBitmap(Xfan, Yfan, fan0, Wfan, Hfan, indicator_color);
 }
 
 //--------------------------------------------------------------------
 void ThermHMI::animateFan(int speed)
 {
-  int fan_delay, color;
+  int fan_delay;
   if (speed == FAN_SPEED_1)
   {
     fan_delay = SLOWdelay;
-    color = ST7735_WHITE;
   }
   else
   {
     fan_delay = FASTdelay;
-    color = ST7735_BLUE;
   }
   if (millis() - lastTimeFanChanged > fan_delay)
   {
@@ -47,12 +46,12 @@ void ThermHMI::animateFan(int speed)
     if (fan == 0)
     {
       fan = 1;
-      _tft->drawBitmap(Xfan, Yfan, fan0, Wfan, Hfan, color);
+      _tft->drawBitmap(Xfan, Yfan, fan0, Wfan, Hfan, indicator_color);
     }
     else
     {
       fan = 0;
-      _tft->drawBitmap(Xfan, Yfan, fan1, Wfan, Hfan, color);
+      _tft->drawBitmap(Xfan, Yfan, fan1, Wfan, Hfan, indicator_color);
     }
     lastTimeFanChanged = millis();
   }
@@ -61,6 +60,7 @@ void ThermHMI::animateFan(int speed)
 //--------------------------------------------------------------------
 void ThermHMI::update(int tempValue, int fanSpeed, int error_code)
 {
+  int color = 0;
   if (error_code == NO_ERROR)
   {
     last_error_shown = NO_ERROR;
@@ -72,20 +72,32 @@ void ThermHMI::update(int tempValue, int fanSpeed, int error_code)
     {
       if (millis() - lastTimeTempUdated > TEMP_DELAY)
       {
-        int color;
         if (tempValue < (_cfgs->getTemp() - 2 * _cfgs->getHyst()))
         {
           color = ST7735_WHITE;
         }
-        else if (tempValue < (_cfgs->getTemp() + 2 * _cfgs->getHyst()))
+        else if (tempValue < _cfgs->getTemp())
         {
           color = ST7735_GREEN;
+        }
+        else if (tempValue < (_cfgs->getTemp()+_cfgs->getHyst()))
+        {
+          color = ORANGE_COLOR;
         }
         else
         {
           color = ST7735_RED;
         }
-        updateTemp(tempValue, color);
+        if (color != indicator_color)
+        {
+          indicator_color = color;
+          drawIcon();
+          drawFan();
+        }
+        if (tempValue != current_value)
+        {
+          updateTemp(tempValue);
+        }
         lastTimeTempUdated = millis();
       }
 
@@ -95,7 +107,7 @@ void ThermHMI::update(int tempValue, int fanSpeed, int error_code)
       }
       else if (millis() - lastTimeFanChanged < 3000)
       {
-        drawFan(ST7735_WHITE);
+        drawFan();
         lastTimeFanChanged = 0;
       }
     }
@@ -166,7 +178,7 @@ void ThermHMI::drawNeedle(int value, int color)
 }
 
 //--------------------------------------------------------------------
-void ThermHMI::updateTemp(int value, int color)
+void ThermHMI::updateTemp(int value)
 {
   int xShift = 64;
 
@@ -193,7 +205,7 @@ void ThermHMI::updateTemp(int value, int color)
   }
   //_tft->drawChar()
   _tft->setTextSize(4);
-  _tft->setTextColor(color, ST7735_BLACK);
+  _tft->setTextColor(indicator_color, ST7735_BLACK);
   _tft->setCursor(Xicon - xShift, Yicon - 16);
   _tft->print(value);
 }
@@ -251,37 +263,37 @@ void ThermHMI::drawMarks(int color)
 }
 
 //--------------------------------------------------------------------
-void ThermHMI::drawIcon(int color)
+void ThermHMI::drawIcon()
 {
   // --------------- Draw icon -------------------------
   // Circle
-  _tft->fillCircle(Xicon, Yicon, Rtherm, color);
+  _tft->fillCircle(Xicon, Yicon, Rtherm, indicator_color);
   // Bulb
-  _tft->fillRect(Xicon - Wtherm / 2, Yicon - Rtherm - Htherm, Wtherm, Htherm, color);
-  _tft->fillCircle(Xicon, Yicon - Rtherm - Htherm, Wtherm / 2, color);
+  _tft->fillRect(Xicon - Wtherm / 2, Yicon - Rtherm - Htherm, Wtherm, Htherm, indicator_color);
+  _tft->fillCircle(Xicon, Yicon - Rtherm - Htherm, Wtherm / 2, indicator_color);
   // Marks
-  _tft->fillRect(Xicon + Wtherm / 2, Yicon - Rtherm - Htherm + SPACEmarks / 2, Lmarks, Wmarks, color);
-  _tft->fillRect(Xicon + Wtherm / 2, Yicon - Rtherm - Htherm + 3 * SPACEmarks / 2, Lmarks, Wmarks, color);
-  _tft->fillRect(Xicon + Wtherm / 2, Yicon - Rtherm - Htherm + 5 * SPACEmarks / 2, Lmarks, Wmarks, color);
+  _tft->fillRect(Xicon + Wtherm / 2, Yicon - Rtherm - Htherm + SPACEmarks / 2, Lmarks, Wmarks, indicator_color);
+  _tft->fillRect(Xicon + Wtherm / 2, Yicon - Rtherm - Htherm + 3 * SPACEmarks / 2, Lmarks, Wmarks, indicator_color);
+  _tft->fillRect(Xicon + Wtherm / 2, Yicon - Rtherm - Htherm + 5 * SPACEmarks / 2, Lmarks, Wmarks, indicator_color);
   // right hand wave
-  _tft->fillRect(Xicon + SPACEwaves, Yicon + Hwaves, Wwaves, Hwaves, color);
-  _tft->fillRect(Xicon + SPACEwaves + Wwaves, Yicon, Wwaves, Hwaves, color);
-  _tft->fillRect(Xicon + SPACEwaves + 2 * Wwaves, Yicon + Hwaves, Hwaves, Hwaves, color);
+  _tft->fillRect(Xicon + SPACEwaves, Yicon + Hwaves, Wwaves, Hwaves, indicator_color);
+  _tft->fillRect(Xicon + SPACEwaves + Wwaves, Yicon, Wwaves, Hwaves, indicator_color);
+  _tft->fillRect(Xicon + SPACEwaves + 2 * Wwaves, Yicon + Hwaves, Hwaves, Hwaves, indicator_color);
   // left hand wave
-  _tft->fillRect(Xicon - SPACEwaves - Wwaves, Yicon + Hwaves, Wwaves, Hwaves, color);
-  _tft->fillRect(Xicon - SPACEwaves - 2 * Wwaves, Yicon, Wwaves, Hwaves, color);
-  _tft->fillRect(Xicon - SPACEwaves - 2 * Wwaves - Hwaves, Yicon + Hwaves, Hwaves, Hwaves, color);
+  _tft->fillRect(Xicon - SPACEwaves - Wwaves, Yicon + Hwaves, Wwaves, Hwaves, indicator_color);
+  _tft->fillRect(Xicon - SPACEwaves - 2 * Wwaves, Yicon, Wwaves, Hwaves, indicator_color);
+  _tft->fillRect(Xicon - SPACEwaves - 2 * Wwaves - Hwaves, Yicon + Hwaves, Hwaves, Hwaves, indicator_color);
   // left hand wave
-  _tft->fillRect(Xicon - 3.5 * Wwaves + Hwaves, Yicon + SPACEwaves + 1, Hwaves, Hwaves, color);
-  _tft->fillRect(Xicon - 2.5 * Wwaves, Yicon + SPACEwaves + Hwaves + 1, Wwaves, Hwaves, color);
-  _tft->fillRect(Xicon - 1.5 * Wwaves, Yicon + SPACEwaves + 1, Wwaves, Hwaves, color);
-  _tft->fillRect(Xicon - .5 * Wwaves, Yicon + SPACEwaves + Hwaves + 1, Wwaves, Hwaves, color);
-  _tft->fillRect(Xicon + .5 * Wwaves, Yicon + SPACEwaves + 1, Wwaves, Hwaves, color);
-  _tft->fillRect(Xicon + 1.5 * Wwaves, Yicon + SPACEwaves + Hwaves + 1, Wwaves, Hwaves, color);
-  _tft->fillRect(Xicon + 2.5 * Wwaves, Yicon + SPACEwaves + 1, Hwaves, Hwaves, color);
+  _tft->fillRect(Xicon - 3.5 * Wwaves + Hwaves, Yicon + SPACEwaves + 1, Hwaves, Hwaves, indicator_color);
+  _tft->fillRect(Xicon - 2.5 * Wwaves, Yicon + SPACEwaves + Hwaves + 1, Wwaves, Hwaves, indicator_color);
+  _tft->fillRect(Xicon - 1.5 * Wwaves, Yicon + SPACEwaves + 1, Wwaves, Hwaves, indicator_color);
+  _tft->fillRect(Xicon - .5 * Wwaves, Yicon + SPACEwaves + Hwaves + 1, Wwaves, Hwaves, indicator_color);
+  _tft->fillRect(Xicon + .5 * Wwaves, Yicon + SPACEwaves + 1, Wwaves, Hwaves, indicator_color);
+  _tft->fillRect(Xicon + 1.5 * Wwaves, Yicon + SPACEwaves + Hwaves + 1, Wwaves, Hwaves, indicator_color);
+  _tft->fillRect(Xicon + 2.5 * Wwaves, Yicon + SPACEwaves + 1, Hwaves, Hwaves, indicator_color);
   // ----- Celcius Degrees -------------
   _tft->setTextSize(1);
-  _tft->setTextColor(color, ST7735_BLACK);
+  _tft->setTextColor(indicator_color, ST7735_BLACK);
   _tft->setCursor(Xicon - 16, Yicon - 13);
   _tft->print((char)247);
   _tft->println('C');

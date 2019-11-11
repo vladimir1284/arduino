@@ -22,7 +22,7 @@ void ElectroController::run(int temp)
         trunOffSpeed0();
 
         // Next state
-        if (temp > (temp1 + hysteresis))
+        if (temp >= temp1)
         {
             state = SPEED0;
         }
@@ -30,14 +30,14 @@ void ElectroController::run(int temp)
 
     case SPEED0:
         // Tasks
+        trunOffSpeed1();
         trunOnSpeed0();
-
         // Next state
         if (temp < (temp1 - hysteresis))
         {
             state = IDLE;
         }
-        if (temp > (temp1 + DUAL_HYST_FACTOR * hysteresis))
+        if (temp > (temp1 + hysteresis))
         {
             state = SPEED1;
         }
@@ -49,11 +49,11 @@ void ElectroController::run(int temp)
         turnOffBuzzer();
 
         // Next state
-        if (temp < temp1)
+        if (temp <= temp1)
         {
             state = SPEED0;
         }
-        if (temp > TMAX)
+        if (temp > (temp1 + 2 * hysteresis))
         {
             state = ALARM;
         }
@@ -64,7 +64,7 @@ void ElectroController::run(int temp)
         turnOnBuzzer();
 
         // Next state
-        if (temp < TMAX)
+        if (temp < (temp1 + 2 * hysteresis - 1))
         {
             state = SPEED1;
         }
@@ -131,7 +131,7 @@ int ElectroController::readTemperature()
     else
     {
         error_code = NO_ERROR;
-        
+
         // Compute temperature
         double Temp;
         Temp = log(((40960000 / val) - 10000));
@@ -176,10 +176,6 @@ void ElectroController::turnOffBuzzer()
 //--------------------------------------------------------------------
 void ElectroController::trunOnSpeed0()
 {
-    if (DUAL)
-    {
-        trunOffSpeed1();
-    }
     digitalWrite(pinSpeed0, HIGH);
 }
 
@@ -192,20 +188,13 @@ void ElectroController::trunOffSpeed0()
 //--------------------------------------------------------------------
 void ElectroController::trunOnSpeed1()
 {
-    if (DUAL)
-    {
-        trunOffSpeed0();
-        digitalWrite(pinSpeed1, HIGH);
-    }
+    digitalWrite(pinSpeed1, HIGH);
 }
 
 //--------------------------------------------------------------------
 void ElectroController::trunOffSpeed1()
 {
-    if (DUAL)
-    {
-        digitalWrite(pinSpeed1, LOW);
-    }
+    digitalWrite(pinSpeed1, LOW);
 }
 
 //--------------------------------------------------------------------
