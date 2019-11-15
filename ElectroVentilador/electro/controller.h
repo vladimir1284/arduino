@@ -21,7 +21,7 @@ public:
         run(int temp),
         init(int ntcPin, int buzzerPin, int speed0Pin,
              int speed1Pin, int temp1, int hysteresis,
-             int calibration),
+             int calibration, int sensorAPIN, int sensorBPIN),
         setTemp1(int temp),
         setHysteresis(int hyst),
         setCalibration(int cal),
@@ -37,6 +37,8 @@ private:
         pinBuzzer,
         pinSpeed0,
         pinSpeed1,
+        pinSensorA,
+        pinSensorB,
         temp1,
         hysteresis,
         calibration,
@@ -46,10 +48,19 @@ private:
     states state;
     MeanFilter filter;
 
+    bool buzzerState,
+         sound;
+
+    bool signalAisActive(),
+         signalBisActive();
+
+    unsigned int lastBuzzerChange;
+
     int readTemperature();
 
     void trunOnSpeed0(),
         trunOffSpeed0(),
         trunOnSpeed1(),
-        trunOffSpeed1();
+        trunOffSpeed1(),
+        handleBuzzer();
 };

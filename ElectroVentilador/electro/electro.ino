@@ -28,7 +28,6 @@ int speed, temp;
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
 // Input pin for the button
-#define BTN_PIN PA10
 Button btn = Button();
 
 int screenTask = WORK;
@@ -71,7 +70,7 @@ void setup(void)
   // Init the controller
   controller.init(PIN_NTC, PIN_BUZ, PIN_FAN0, PIN_FAN1,
                   cfgs.getTemp(), cfgs.getHyst(),
-                  cfgs.getCalibration());
+                  cfgs.getCalibration(), PIN_A, PIN_B);
 
   // Buzzer sound indicating ready
   int i;

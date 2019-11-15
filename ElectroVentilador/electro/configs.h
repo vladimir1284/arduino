@@ -15,6 +15,8 @@
 
 // Delay ms for 
 #define INIT_BUZZ_DELAY 150
+#define BUZZER_ON_DELAY 150
+#define BUZZER_OFF_DELAY 1000
 
 // Validation values for parameters
 #define MIN_CAL_VAL -5
@@ -25,10 +27,13 @@
 #define MAX_HYST_VAL 6
 
 // PINOUT
-#define PIN_NTC PA0
-#define PIN_BUZ PB15
+#define PIN_NTC  PA0
+#define PIN_BUZ  PB15
 #define PIN_FAN0 PA9
 #define PIN_FAN1 PA8
+#define BTN_PIN  PA10
+#define PIN_A    PA11
+#define PIN_B    PA12
 
 // Simulator
 #define SIM_Tmin 70

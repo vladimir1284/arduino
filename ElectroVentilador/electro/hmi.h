@@ -22,8 +22,13 @@ class ThermHMI {
        updateTemp(int value),
        showError(int error_code);
 
-  unsigned int lastTimeFanChanged, lastTimeTempUdated;
-  int current_value, fan, last_error_shown, indicator_color;
+  unsigned int lastTimeTempUdated,
+               lastTimeFanChanged;
+  int current_value, 
+      fan, 
+      last_error_shown, 
+      lastFanSpeed,
+      indicator_color;
   int *screenTask;
   bool pendingClear;
 };

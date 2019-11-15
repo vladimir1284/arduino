@@ -5,8 +5,9 @@ ThermHMI::ThermHMI(Adafruit_ST7735 *tft, int *st, Configs *cfgs)
 {
   _tft = tft;
   _cfgs = cfgs;
-  lastTimeFanChanged = 0;
+  lastFanSpeed = FAN_STOP;
   lastTimeTempUdated = 0;
+  lastTimeFanChanged = 0;
   pendingClear = false;
   screenTask = st;
   indicator_color = ST7735_WHITE;
@@ -105,11 +106,14 @@ void ThermHMI::update(int tempValue, int fanSpeed, int error_code)
       {
         animateFan(fanSpeed);
       }
-      else if (millis() - lastTimeFanChanged < 3000)
+      else if (lastFanSpeed != FAN_STOP)
       {
+        // Update the fan to a static image after stop
         drawFan();
-        lastTimeFanChanged = 0;
       }
+    } else {
+      // Ensure that temperature is printed after screen task change
+      current_value = 0;
     }
   }
   else
@@ -117,6 +121,7 @@ void ThermHMI::update(int tempValue, int fanSpeed, int error_code)
     // Error detected
     showError(error_code);
   }
+  lastFanSpeed = fanSpeed;
 }
 
 //--------------------------------------------------------------------

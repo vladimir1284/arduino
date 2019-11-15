@@ -13,8 +13,51 @@ void ElectroController::run()
 }
 
 //--------------------------------------------------------------------
+void ElectroController::handleBuzzer()
+{
+    if (buzzerState)
+    {
+        if (sound)
+        {
+            if (millis() - lastBuzzerChange > BUZZER_ON_DELAY)
+            {
+                lastBuzzerChange = millis();
+                turnOffBuzzer();
+            }
+        }
+        else
+        {
+            if (millis() - lastBuzzerChange > BUZZER_OFF_DELAY)
+            {
+                lastBuzzerChange = millis();
+                turnOnBuzzer();
+            }
+        }
+    }
+    else
+    {
+        turnOffBuzzer();
+    }
+}
+
+//--------------------------------------------------------------------
+bool ElectroController::signalAisActive()
+{
+    return (digitalRead(pinSensorA) == LOW);
+}
+
+//--------------------------------------------------------------------
+bool ElectroController::signalBisActive()
+{
+    return (digitalRead(pinSensorB) == LOW);
+}
+
+//--------------------------------------------------------------------
 void ElectroController::run(int temp)
 {
+    // Handle buzzer
+    handleBuzzer();
+    // Main FSM
     switch (state)
     {
     case IDLE:
@@ -22,7 +65,9 @@ void ElectroController::run(int temp)
         trunOffSpeed0();
 
         // Next state
-        if (temp >= temp1)
+        if (temp >= temp1 ||
+            signalAisActive() ||
+            signalBisActive())
         {
             state = SPEED0;
         }
@@ -33,11 +78,14 @@ void ElectroController::run(int temp)
         trunOffSpeed1();
         trunOnSpeed0();
         // Next state
-        if (temp < (temp1 - hysteresis))
+        if ((temp <= (temp1 - hysteresis)) &&
+            !signalAisActive() &&
+            !signalBisActive())
         {
             state = IDLE;
         }
-        if (temp > (temp1 + hysteresis))
+        if (temp >= (temp1 + hysteresis) ||
+            signalBisActive())
         {
             state = SPEED1;
         }
@@ -46,14 +94,15 @@ void ElectroController::run(int temp)
     case SPEED1:
         // Tasks
         trunOnSpeed1();
-        turnOffBuzzer();
+        buzzerState = LOW;
 
         // Next state
-        if (temp <= temp1)
+        if (temp <= temp1 &&
+            !signalBisActive())
         {
             state = SPEED0;
         }
-        if (temp > (temp1 + 2 * hysteresis))
+        if (temp >= (temp1 + 2 * hysteresis))
         {
             state = ALARM;
         }
@@ -61,10 +110,10 @@ void ElectroController::run(int temp)
 
     case ALARM:
         // Tasks
-        turnOnBuzzer();
+        buzzerState = HIGH;
 
         // Next state
-        if (temp < (temp1 + 2 * hysteresis - 1))
+        if (temp <= (temp1 + 2 * hysteresis - 1))
         {
             state = SPEED1;
         }
@@ -78,7 +127,7 @@ void ElectroController::run(int temp)
 //--------------------------------------------------------------------
 void ElectroController::init(int ntcPin, int buzzerPin, int speed0Pin,
                              int speed1Pin, int temp1, int hysteresis,
-                             int calibration)
+                             int calibration, int sensorAPIN, int sensorBPIN)
 {
     // Configure IO pins
     pinNTC = ntcPin;
@@ -93,18 +142,22 @@ void ElectroController::init(int ntcPin, int buzzerPin, int speed0Pin,
     pinSpeed1 = speed1Pin;
     pinMode(pinSpeed1, OUTPUT);
 
+    pinSensorA = sensorAPIN;
+    pinMode(pinSensorA, INPUT_PULLUP);
+
+    pinSensorB = sensorBPIN;
+    pinMode(pinSensorB, INPUT_PULLUP);
+
     // Set configurations
     setTemp1(temp1);
     setHysteresis(hysteresis);
     setCalibration(calibration);
 
     // Turn off outputs
+    buzzerState = LOW;
     turnOffBuzzer();
     trunOffSpeed0();
-    if (DUAL)
-    {
-        trunOffSpeed1();
-    }
+    trunOffSpeed1();
 
     // Set initial state
     state = IDLE;
@@ -118,7 +171,7 @@ void ElectroController::init(int ntcPin, int buzzerPin, int speed0Pin,
  ************/
 int ElectroController::readTemperature()
 {
-    int val = analogRead(pinNTC);
+    int val = 4096 - analogRead(pinNTC);
     // Validate sensor conection
     if (val < MIN_VAL_CODE)
     {
@@ -164,13 +217,17 @@ void ElectroController::setTemperature(int temp)
 //--------------------------------------------------------------------
 void ElectroController::turnOnBuzzer()
 {
-    digitalWrite(pinBuzzer, HIGH);
+    //digitalWrite(pinBuzzer, HIGH);
+    tone(pinBuzzer, 200);
+    sound = true;
 }
 
 //--------------------------------------------------------------------
 void ElectroController::turnOffBuzzer()
 {
-    digitalWrite(pinBuzzer, LOW);
+    //digitalWrite(pinBuzzer, LOW);
+    noTone(pinBuzzer);
+    sound = false;
 }
 
 //--------------------------------------------------------------------
@@ -228,13 +285,6 @@ int ElectroController::getFanSpeed()
     }
     else if (state == SPEED1 || state == ALARM)
     {
-        if (DUAL)
-        {
-            return FAN_SPEED_2;
-        }
-        else
-        {
-            return FAN_SPEED_1;
-        }
+        return FAN_SPEED_2;
     }
 }
