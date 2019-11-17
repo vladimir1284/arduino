@@ -9,7 +9,7 @@ class ThermHMI {
   ThermHMI(Adafruit_ST7735 *tft, int *st, Configs *cfgs);
 
   void  drawHMItemplate(int color),
-        update(int tempValue, int fanSpeed, int error_code);
+        update(int tempValue, int fanSpeed, int error_code, float voltage);
 
  private:
   Adafruit_ST7735  *_tft;
@@ -17,9 +17,11 @@ class ThermHMI {
   void animateFan(int speed),
        drawFan(),
        drawIcon(),
+       drawBateryIcon(int color),
        drawMarks(int color),
        drawNeedle(int value, int color),
        updateTemp(int value),
+       updateVoltage(float voltage),
        showError(int error_code);
 
   unsigned int lastTimeTempUdated,
@@ -31,6 +33,7 @@ class ThermHMI {
       indicator_color;
   int *screenTask;
   bool pendingClear;
+  float lastVoltage;
 };
 
 

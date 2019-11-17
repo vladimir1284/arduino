@@ -14,7 +14,7 @@ Configs::Configs(Adafruit_ST7735 *tft, int *st, Button *btn)
 //--------------------------------------------------------------------
 void Configs::init()
 {
-  uint16 temperature1, hyst, calib;
+  uint16 temperature1, hyst, calib, voltCalib;
 
   lastTimePressed = 0;
   lastTimeChanged = 0;
@@ -31,6 +31,8 @@ void Configs::init()
   hysteresis = hyst;
   EEPROM.read(EEPROM.PageBase0 + BASE_ADDRESS + 8, &calib);
   calibration = calib - abs(MIN_CAL_VAL);
+  EEPROM.read(EEPROM.PageBase0 + BASE_ADDRESS + 12, &voltCalib);
+  voltCalibration = voltCalib - abs(MIN_CAL_VOLT);
 
   // validate configs
   validateConfigs();
@@ -45,7 +47,8 @@ void Configs::validateConfigs()
 {
   if (temp1 < MIN_TEMP_VAL || temp1 > MAX_TEMP_VAL ||
       hysteresis < MIN_HYST_VAL || hysteresis > MAX_HYST_VAL ||
-      calibration < MIN_CAL_VAL || calibration > MAX_CAL_VAL)
+      calibration < MIN_CAL_VAL || calibration > MAX_CAL_VAL ||
+      voltCalibration < MIN_CAL_VOLT || voltCalibration > MAX_CAL_VOLT)
   {
     configurationNeeded = true;
   }
@@ -55,12 +58,12 @@ void Configs::validateConfigs()
 void Configs::setPos(int position)
 {
   // Delete old Square background
-  _tft->drawRect(0, pos * 32, 160, 32, ST7735_BLACK);
+  _tft->drawRect(0, pos * RECT_HEIGHT, RECT_WIDTH, RECT_HEIGHT, ST7735_BLACK);
   _tft->setCursor(0, 1);
 
   // Draw new Square background
   pos = position;
-  _tft->drawRect(0, pos * 32, 160, 32, ST7735_BLUE);
+  _tft->drawRect(0, pos * RECT_HEIGHT, RECT_WIDTH, RECT_HEIGHT, ST7735_BLUE);
   _tft->setCursor(0, 1);
   //drawMenu(text, nItems);
 }
@@ -93,6 +96,11 @@ void Configs::prepareEditScreen(const char text[][STRING_LENGTH])
     printValue(calibration);
     break;
   case 3:
+    screen = VOLTAGE;
+    value = MIN_CAL_VOLT;
+    printVoltValue(voltCalibration);
+    break;
+  case 4:
     *screenTask = TEST;
     leaveMenus();
     break;
@@ -101,6 +109,20 @@ void Configs::prepareEditScreen(const char text[][STRING_LENGTH])
   }
 }
 
+
+//--------------------------------------------------------------------
+void Configs::printLargeVoltValue()
+{
+  // Clean
+  _tft->setCursor(48, 48);
+  _tft->setTextColor(ST7735_WHITE, ST7735_BLACK);
+  _tft->setTextSize(6);
+  _tft->print("   ");
+
+  // Print
+  _tft->setCursor(0, 48);
+  _tft->print((float)value/10,1);
+}
 //--------------------------------------------------------------------
 void Configs::printLargeValue()
 {
@@ -126,21 +148,32 @@ void Configs::drawMenu(const char text[][STRING_LENGTH], int nItems)
   for (i = 0; i < nItems; i++)
   {
     _tft->println(text[i]);
-    switch (i)
-    {
-    case 0:
-      printValue(temp1);
-      break;
-    case 1:
-      printValue(hysteresis);
-      break;
-    case 2:
-      printValue(calibration);
-      break;
-    default:
-      break;
-    }
+    // switch (i)
+    // {
+    // case 0:
+    //   printValue(temp1);
+    //   break;
+    // case 1:
+    //   printValue(hysteresis);
+    //   break;
+    // case 2:
+    //   printValue(calibration);
+    //   break;
+    // case 3:
+    //   printValue(voltCalibration);
+    //   break;
+    // default:
+    //   break;
+    // }
   }
+}
+
+//--------------------------------------------------------------------
+void Configs::printVoltValue(int val)
+{
+  _tft->print(' ');
+  _tft->print((float)val/10);
+  _tft->println('V');
 }
 
 //--------------------------------------------------------------------
@@ -292,6 +325,29 @@ void Configs::run()
       startConfig();
     }
     break;
+  case VOLTAGE:
+    if (millis() - lastTimePressed > WAITING_TIME)
+    {
+      screen = MAIN;
+      startConfig();
+      lastTimePressed = millis();
+    }
+    if (millis() - lastTimeChanged > CHANGE_TIME)
+    {
+      if (++value > MAX_CAL_VOLT)
+      {
+        value = MIN_CAL_VOLT;
+      }
+      printLargeVoltValue();
+      lastTimeChanged = millis();
+    }
+    if (_btn->shortPressed())
+    {
+      lastTimePressed = millis();
+      saveVoltCalibration();
+      startConfig();
+    }
+    break;
   default:
     break;
   }
@@ -307,6 +363,12 @@ int Configs::getTemp()
 int Configs::getHyst()
 {
   return hysteresis;
+}
+
+//--------------------------------------------------------------------
+int Configs::getVoltCalibration()
+{
+  return voltCalibration;
 }
 
 //--------------------------------------------------------------------
@@ -339,5 +401,17 @@ void Configs::saveCalibration()
   val = 0;
   EEPROM.read(EEPROM.PageBase0 + BASE_ADDRESS + 8, &val);
   calibration = value;
+  validateConfigs();
+}
+
+
+//--------------------------------------------------------------------
+void Configs::saveVoltCalibration()
+{
+  uint16 val = (uint16)(value + abs(MIN_CAL_VOLT));
+  EEPROM.write(EEPROM.PageBase0 + BASE_ADDRESS + 12, val);
+  val = 0;
+  EEPROM.read(EEPROM.PageBase0 + BASE_ADDRESS + 12, &val);
+  voltCalibration = value;
   validateConfigs();
 }

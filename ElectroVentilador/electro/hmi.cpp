@@ -11,6 +11,57 @@ ThermHMI::ThermHMI(Adafruit_ST7735 *tft, int *st, Configs *cfgs)
   pendingClear = false;
   screenTask = st;
   indicator_color = ST7735_WHITE;
+  lastVoltage = 0;
+}
+
+//--------------------------------------------------------------------
+void ThermHMI::drawBateryIcon(int color)
+{
+  // body
+  _tft->fillRoundRect(Xbat, Ybat, Wbat, Hbat, Rbat, color);
+  // Connectors
+  _tft->fillRoundRect(Xbat + 4, Ybat - 5, 6, 6, 1, color);
+  _tft->fillRoundRect(Xbat + 15, Ybat - 5, 6, 6, 1, color);
+  _tft->fillRect(Xbat + 4, Ybat - 2, 21, 2, ST7735_BLACK);
+  // Polarity
+  _tft->fillRect(Xbat + 4, 1.5 * Ybat + 2, 6, 2, ST7735_BLACK);
+  _tft->fillRect(Xbat + 15, 1.5 * Ybat + 2, 6, 2, ST7735_BLACK);
+  _tft->fillRect(Xbat + 17, 1.5 * Ybat, 2, 6, ST7735_BLACK);
+}
+
+//--------------------------------------------------------------------
+void ThermHMI::updateVoltage(float voltage)
+{
+  int color = ST7735_GREEN;
+  if (abs(voltage - lastVoltage) > 0.1)
+  {
+    // Get the correct color
+    if (voltage < VOLT_MIN)
+    {
+      color = ST7735_WHITE;
+    }
+    else if (voltage > VOLT_MAX)
+    {
+      color = ST7735_RED;
+    }
+    // Draw the batery icon
+    drawBateryIcon(color);
+
+    // Update text
+    _tft->setTextColor(color, ST7735_BLACK);
+    _tft->setTextSize(1);
+
+    // Clear
+    _tft->setCursor(TEXTgap, Ybat + Hbat + TEXTgap);
+    _tft->print("     ");
+
+    // Update
+    _tft->setCursor(TEXTgap, Ybat + Hbat + TEXTgap);
+    _tft->print(voltage, 1);
+    _tft->print('V');
+
+    lastVoltage = voltage;
+  }
 }
 
 //--------------------------------------------------------------------
@@ -18,6 +69,7 @@ void ThermHMI::drawHMItemplate(int color)
 {
   _tft->fillScreen(ST7735_BLACK);
   drawIcon();
+  updateVoltage(0); // Forcing drawing with a different value
   drawFan();
   drawMarks(ST7735_WHITE);
 }
@@ -59,7 +111,7 @@ void ThermHMI::animateFan(int speed)
 }
 
 //--------------------------------------------------------------------
-void ThermHMI::update(int tempValue, int fanSpeed, int error_code)
+void ThermHMI::update(int tempValue, int fanSpeed, int error_code, float voltage)
 {
   int color = 0;
   if (error_code == NO_ERROR)
@@ -81,7 +133,7 @@ void ThermHMI::update(int tempValue, int fanSpeed, int error_code)
         {
           color = ST7735_GREEN;
         }
-        else if (tempValue < (_cfgs->getTemp()+_cfgs->getHyst()))
+        else if (tempValue < (_cfgs->getTemp() + _cfgs->getHyst()))
         {
           color = ORANGE_COLOR;
         }
@@ -99,6 +151,7 @@ void ThermHMI::update(int tempValue, int fanSpeed, int error_code)
         {
           updateTemp(tempValue);
         }
+        updateVoltage(voltage);
         lastTimeTempUdated = millis();
       }
 
@@ -111,7 +164,9 @@ void ThermHMI::update(int tempValue, int fanSpeed, int error_code)
         // Update the fan to a static image after stop
         drawFan();
       }
-    } else {
+    }
+    else
+    {
       // Ensure that temperature is printed after screen task change
       current_value = 0;
     }

@@ -17,23 +17,29 @@ public:
     ElectroController();
 
     void run(),
-        setTemperature(int temp),
+        //setTemperature(int temp),
         run(int temp),
         init(int ntcPin, int buzzerPin, int speed0Pin,
-             int speed1Pin, int temp1, int hysteresis,
-             int calibration, int sensorAPIN, int sensorBPIN),
+            int speed1Pin, int temp1, int hysteresis,
+            int calibration, int VoltCalibration, 
+            int sensorAPIN, int sensorBPIN,
+            int voltagePIN),
         setTemp1(int temp),
         setHysteresis(int hyst),
         setCalibration(int cal),
+        setVoltCalibration(int cal),
         turnOnBuzzer(),
         turnOffBuzzer();
 
-    int getTemperature(),
-        getErrorCode(),
+    int getErrorCode(),
         getFanSpeed();
+
+    float getTemperature(),
+          getVoltage();
 
 private:
     int pinNTC,
+        pinVOLT,
         pinBuzzer,
         pinSpeed0,
         pinSpeed1,
@@ -42,11 +48,15 @@ private:
         temp1,
         hysteresis,
         calibration,
-        error_code,
-        temperature;
+        voltCalibration,
+        error_code;
+
+    float voltage,
+          temperature;
 
     states state;
-    MeanFilter filter;
+    MeanFilter TempFilter,
+                voltFiler;
 
     bool buzzerState,
          sound;
@@ -56,11 +66,11 @@ private:
 
     unsigned int lastBuzzerChange;
 
-    int readTemperature();
-
     void trunOnSpeed0(),
         trunOffSpeed0(),
         trunOnSpeed1(),
         trunOffSpeed1(),
+        readTemperature(),
+        readVoltage(),
         handleBuzzer();
 };

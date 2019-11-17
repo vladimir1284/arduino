@@ -3,13 +3,16 @@
 // Constructor
 ElectroController::ElectroController()
 {
-    filter = MeanFilter();
+    TempFilter = MeanFilter();
+    voltFiler = MeanFilter();
 }
 
 //--------------------------------------------------------------------
 void ElectroController::run()
 {
-    run(readTemperature());
+    readTemperature();
+    readVoltage();
+    run(temperature);
 }
 
 //--------------------------------------------------------------------
@@ -127,11 +130,16 @@ void ElectroController::run(int temp)
 //--------------------------------------------------------------------
 void ElectroController::init(int ntcPin, int buzzerPin, int speed0Pin,
                              int speed1Pin, int temp1, int hysteresis,
-                             int calibration, int sensorAPIN, int sensorBPIN)
+                             int calibration, int VoltCalibration,
+                             int sensorAPIN, int sensorBPIN,
+                             int voltagePIN)
 {
     // Configure IO pins
     pinNTC = ntcPin;
     pinMode(pinNTC, INPUT_ANALOG);
+
+    pinVOLT = voltagePIN;
+    pinMode(pinVOLT, INPUT_ANALOG);
 
     pinBuzzer = buzzerPin;
     pinMode(pinBuzzer, OUTPUT);
@@ -152,6 +160,7 @@ void ElectroController::init(int ntcPin, int buzzerPin, int speed0Pin,
     setTemp1(temp1);
     setHysteresis(hysteresis);
     setCalibration(calibration);
+    setVoltCalibration(VoltCalibration);
 
     // Turn off outputs
     buzzerState = LOW;
@@ -161,6 +170,28 @@ void ElectroController::init(int ntcPin, int buzzerPin, int speed0Pin,
 
     // Set initial state
     state = IDLE;
+    buzzerState = LOW;
+    sound = false;
+
+    // Init temperature and voltage
+    //voltage     = 0;
+    //temperature = 0;
+}
+
+//--------------------------------------------------------------------
+/*************
+ * Routine for obtainig the batery voltage
+ * It will take into account the correction factor
+ * provided by the user in configurations
+ ************/
+void ElectroController::readVoltage()
+{
+    int val = analogRead(pinVOLT);
+    float volt = (val * VOLT_FACTOR + (float)voltCalibration / 10);
+
+    voltFiler.insertValue(volt);
+    //voltage = volt;
+    voltage = voltFiler.getValue();
 }
 
 //--------------------------------------------------------------------
@@ -169,7 +200,7 @@ void ElectroController::init(int ntcPin, int buzzerPin, int speed0Pin,
  * It will take into account the correction factor
  * provided by the user in configurations
  ************/
-int ElectroController::readTemperature()
+void ElectroController::readTemperature()
 {
     int val = 4096 - analogRead(pinNTC);
     // Validate sensor conection
@@ -186,14 +217,13 @@ int ElectroController::readTemperature()
         error_code = NO_ERROR;
 
         // Compute temperature
-        double Temp;
+        float Temp;
         Temp = log(((40960000 / val) - 10000));
         Temp = 1 / (0.001129148 + (0.000234125 + (0.0000000876741 * Temp * Temp)) * Temp);
         Temp = Temp - 273.15; // Converierte de Kelvin a Celsius
-        filter.insertValue(Temp + calibration);
-        temperature = filter.getValue();
+        TempFilter.insertValue(Temp + calibration);
+        temperature = TempFilter.getValue();
     }
-    return temperature;
 }
 
 //--------------------------------------------------------------------
@@ -203,16 +233,22 @@ int ElectroController::getErrorCode()
 }
 
 //--------------------------------------------------------------------
-int ElectroController::getTemperature()
+float ElectroController::getTemperature()
 {
     return temperature;
 }
 
 //--------------------------------------------------------------------
-void ElectroController::setTemperature(int temp)
+float ElectroController::getVoltage()
 {
-    temperature = temp;
+    return voltage;
 }
+
+// //--------------------------------------------------------------------
+// void ElectroController::setTemperature(int temp)
+// {
+//     temperature = temp;
+// }
 
 //--------------------------------------------------------------------
 void ElectroController::turnOnBuzzer()
@@ -270,6 +306,12 @@ void ElectroController::setHysteresis(int hyst)
 void ElectroController::setCalibration(int cal)
 {
     calibration = cal;
+}
+
+//--------------------------------------------------------------------
+void ElectroController::setVoltCalibration(int cal)
+{
+    voltCalibration = cal;
 }
 
 //--------------------------------------------------------------------

@@ -5,10 +5,15 @@
 #include <EEPROM.h>
 #include "button.h"
 
+// ------------ Configuration---------------------
 // Time delay for returning to IDLE state
-#define WAITING_TIME 11000 // ms
+#define WAITING_TIME 20000 // ms
 // Time delay for changing between menu elements
 #define CHANGE_TIME 1000 // ms
+
+#define RECT_HEIGHT 16
+#define RECT_WIDTH  160
+// -------------------------------------------------
 
 // Base address for storing configs
 #define BASE_ADDRESS 0
@@ -28,12 +33,21 @@
 
 // PINOUT
 #define PIN_NTC  PA0
+#define PIN_VOLT PA1
 #define PIN_BUZ  PB15
 #define PIN_FAN0 PA9
 #define PIN_FAN1 PA8
 #define BTN_PIN  PA10
-#define PIN_A    PA11
+#define PIN_A    PA15
 #define PIN_B    PA12
+
+// Voltmeter
+#define VOLT_MIN 12
+#define VOLT_MAX 13
+#define MIN_CAL_VOLT -9
+#define MAX_CAL_VOLT  9
+#define VOLT_FACTOR 0.00459228515625 // 4.7k - 1k
+
 
 // Simulator
 #define SIM_Tmin 70
@@ -80,17 +94,19 @@ enum screens
   MAIN,
   TEMP1,
   HYST,
-  CALIBRAR
+  CALIBRAR,
+  VOLTAGE
 };
 
 // Max length of configuration strings
 #define STRING_LENGTH 14
 
 // Main Screen
-#define MAIN_ITEMS 4
+#define MAIN_ITEMS 5
 PROGMEM const char mainText[MAIN_ITEMS][STRING_LENGTH] = {" Temperatura",
                                                           "  Histeresis",
                                                           "   Calibrar ",
+                                                          "   Voltaje  ",
                                                           "    Prueba  "};
 
 // ---------- HMI --------------
@@ -106,6 +122,15 @@ PROGMEM const char mainText[MAIN_ITEMS][STRING_LENGTH] = {" Temperatura",
 #define SPACEwaves 5
 #define Wwaves 4
 #define Hwaves 2
+
+// Batery icon
+#define Xbat 5
+#define Ybat 8
+#define Wbat 25
+#define Hbat 16
+#define Rbat 3
+#define TEXTgap 2
+
 
 // Analog indicator
 #define MAXangle 90
@@ -142,7 +167,8 @@ public:
   void init();
   int getTemp(),
       getHyst(),
-      getCalibration();
+      getCalibration(),
+      getVoltCalibration();
 
 private:
   unsigned int lastTimePressed, lastTimeChanged; // For returning after a while
@@ -156,6 +182,7 @@ private:
   bool configurationNeeded;
   int temp1,
       hysteresis,
+      voltCalibration,
       calibration;
 
   void drawMenu(const char text[][STRING_LENGTH], int nItems),
@@ -165,9 +192,12 @@ private:
       startConfig(),
       saveTemp(),
       saveHyst(),
+      saveVoltCalibration(),
       saveCalibration(),
       printLargeValue(),
+      printLargeVoltValue(),
       printParameterValue(int bg_color),
+      printVoltValue(int value),
       printValue(int value),
       prepareEditScreen(const char text[][STRING_LENGTH]),
       setPos(int position);

@@ -57,6 +57,8 @@ void setup(void)
   tft.fillScreen(ST7735_BLACK);
   tft.setRotation(3);
 
+  screenTask = WORK;
+
   // Setups
   btn.init(BTN_PIN);
   cfgs.init();
@@ -70,7 +72,8 @@ void setup(void)
   // Init the controller
   controller.init(PIN_NTC, PIN_BUZ, PIN_FAN0, PIN_FAN1,
                   cfgs.getTemp(), cfgs.getHyst(),
-                  cfgs.getCalibration(), PIN_A, PIN_B);
+                  cfgs.getCalibration(),cfgs.getVoltCalibration(),
+                  PIN_A, PIN_B, PIN_VOLT);
 
   // Buzzer sound indicating ready
   int i;
@@ -92,14 +95,15 @@ void loop()
     controller.run();
     hmi.update(controller.getTemperature(),
                controller.getFanSpeed(),
-               controller.getErrorCode());
+               controller.getErrorCode(), 
+               controller.getVoltage());
   }
   else
   {
     controller.run(simulatorGetTemp());
     hmi.update(simulatorGetTemp(),
                controller.getFanSpeed(),
-               controller.getErrorCode());
+               controller.getErrorCode(), 12.3);
   }
   verifyConfigChanges();
 }
