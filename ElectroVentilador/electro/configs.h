@@ -41,6 +41,9 @@
 #define PIN_A    PA15
 #define PIN_B    PA12
 
+// Signals controling directly the fan
+#define WAIT2ACTIVATE 250 // ms
+
 // Voltmeter
 #define VOLT_MIN 12
 #define VOLT_MAX 13

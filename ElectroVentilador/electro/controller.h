@@ -1,6 +1,7 @@
 
 #include "configs.h"
 #include "mean_filter.h"
+#include "signal.h"
 
 enum states
 {
@@ -43,8 +44,6 @@ private:
         pinBuzzer,
         pinSpeed0,
         pinSpeed1,
-        pinSensorA,
-        pinSensorB,
         temp1,
         hysteresis,
         calibration,
@@ -58,11 +57,14 @@ private:
     MeanFilter TempFilter,
                 voltFiler;
 
+    ExternalSignal signalA,
+                   signalB;
+
     bool buzzerState,
          sound;
 
-    bool signalAisActive(),
-         signalBisActive();
+    // bool signalAisActive(),
+    //      signalBisActive();
 
     unsigned int lastBuzzerChange;
 

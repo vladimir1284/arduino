@@ -5,6 +5,8 @@ ElectroController::ElectroController()
 {
     TempFilter = MeanFilter();
     voltFiler = MeanFilter();
+    signalA = ExternalSignal();
+    signalB = ExternalSignal();
 }
 
 //--------------------------------------------------------------------
@@ -44,22 +46,13 @@ void ElectroController::handleBuzzer()
 }
 
 //--------------------------------------------------------------------
-bool ElectroController::signalAisActive()
-{
-    return (digitalRead(pinSensorA) == LOW);
-}
-
-//--------------------------------------------------------------------
-bool ElectroController::signalBisActive()
-{
-    return (digitalRead(pinSensorB) == LOW);
-}
-
-//--------------------------------------------------------------------
 void ElectroController::run(int temp)
 {
     // Handle buzzer
     handleBuzzer();
+    // Monitor external signals
+    signalA.run();
+    signalB.run();
     // Main FSM
     switch (state)
     {
@@ -69,8 +62,8 @@ void ElectroController::run(int temp)
 
         // Next state
         if (temp >= temp1 ||
-            signalAisActive() ||
-            signalBisActive())
+            signalA.isActive() ||
+            signalB.isActive())
         {
             state = SPEED0;
         }
@@ -82,13 +75,13 @@ void ElectroController::run(int temp)
         trunOnSpeed0();
         // Next state
         if ((temp <= (temp1 - hysteresis)) &&
-            !signalAisActive() &&
-            !signalBisActive())
+            !signalA.isActive() &&
+            !signalB.isActive())
         {
             state = IDLE;
         }
         if (temp >= (temp1 + hysteresis) ||
-            signalBisActive())
+            signalB.isActive())
         {
             state = SPEED1;
         }
@@ -101,7 +94,7 @@ void ElectroController::run(int temp)
 
         // Next state
         if (temp <= temp1 &&
-            !signalBisActive())
+            !signalB.isActive())
         {
             state = SPEED0;
         }
@@ -150,11 +143,8 @@ void ElectroController::init(int ntcPin, int buzzerPin, int speed0Pin,
     pinSpeed1 = speed1Pin;
     pinMode(pinSpeed1, OUTPUT);
 
-    pinSensorA = sensorAPIN;
-    pinMode(pinSensorA, INPUT_PULLUP);
-
-    pinSensorB = sensorBPIN;
-    pinMode(pinSensorB, INPUT_PULLUP);
+    signalA.init(sensorAPIN);
+    signalB.init(sensorBPIN);
 
     // Set configurations
     setTemp1(temp1);
@@ -172,10 +162,6 @@ void ElectroController::init(int ntcPin, int buzzerPin, int speed0Pin,
     state = IDLE;
     buzzerState = LOW;
     sound = false;
-
-    // Init temperature and voltage
-    //voltage     = 0;
-    //temperature = 0;
 }
 
 //--------------------------------------------------------------------
@@ -243,12 +229,6 @@ float ElectroController::getVoltage()
 {
     return voltage;
 }
-
-// //--------------------------------------------------------------------
-// void ElectroController::setTemperature(int temp)
-// {
-//     temperature = temp;
-// }
 
 //--------------------------------------------------------------------
 void ElectroController::turnOnBuzzer()
