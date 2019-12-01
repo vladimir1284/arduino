@@ -1,30 +1,44 @@
 #include "Adafruit_ST7735.h"
 #include "configs.h"
+#include "bar_points.h"
+#include "controller.h"
 
-#define ORANGE_COLOR  0xFDEE
+#define ORANGE_COLOR  ST7735_YELLOW
 
 class ThermHMI {
 
  public:
-  ThermHMI(Adafruit_ST7735 *tft, int *st, Configs *cfgs);
+  ThermHMI(Adafruit_ST7735 *tft, int *st, Configs *cfgs, ElectroController *controller);
 
-  void  drawHMItemplate(int color),
-        update(int tempValue, int fanSpeed, int error_code, float voltage);
+  void  drawHMItemplate(),
+        update(),
+        showAll();
 
  private:
   Adafruit_ST7735  *_tft;
   Configs *_cfgs;
+  ElectroController *_ctrl;
   void animateFan(int speed),
+       blinkBatery(),
        drawFan(),
        drawIcon(),
+       showConfigs(),
+       drawBar(int percent),
        drawBateryIcon(int color),
        drawMarks(int color),
        drawNeedle(int value, int color),
        updateTemp(int value),
        updateVoltage(float voltage),
+       updateStatusLabels(),
+       showStatusLabels(),
+       updateLabel(bool *previousSatus, bool status,
+                           int color, char *label, int x, int y),
        showError(int error_code);
 
+  int getColor(float tempValue);
+
   unsigned int lastTimeTempUdated,
+               lastBateryChanged,
                lastTimeFanChanged;
   int current_value, 
       fan, 
@@ -32,7 +46,13 @@ class ThermHMI {
       lastFanSpeed,
       indicator_color;
   int *screenTask;
-  bool pendingClear;
+  bool pendingClear,
+        batON,
+        acON,
+        overPressureON,
+        alarmON,
+        speed1ON,
+        speed0ON;
   float lastVoltage;
 };
 

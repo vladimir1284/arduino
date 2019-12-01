@@ -18,8 +18,24 @@ void ElectroController::run()
 }
 
 //--------------------------------------------------------------------
+void ElectroController::handleOverVoltage()
+{
+    if ((voltage <= VOLT_MAX) && (state != ALARM))
+    {
+        turnOffBuzzer();
+    }
+    if ((voltage > VOLT_ALARM) && !buzzerState)
+    {
+        turnOnBuzzer();
+    }
+}
+
+//--------------------------------------------------------------------
 void ElectroController::handleBuzzer()
 {
+    // Over voltage Monitor
+    handleOverVoltage();
+    // Pulse generation
     if (buzzerState)
     {
         if (sound)
@@ -27,7 +43,8 @@ void ElectroController::handleBuzzer()
             if (millis() - lastBuzzerChange > BUZZER_ON_DELAY)
             {
                 lastBuzzerChange = millis();
-                turnOffBuzzer();
+                noTone(pinBuzzer);
+                sound = false;
             }
         }
         else
@@ -35,13 +52,10 @@ void ElectroController::handleBuzzer()
             if (millis() - lastBuzzerChange > BUZZER_OFF_DELAY)
             {
                 lastBuzzerChange = millis();
-                turnOnBuzzer();
+                tone(pinBuzzer, BUZZ_FREQ);
+                sound = true;
             }
         }
-    }
-    else
-    {
-        turnOffBuzzer();
     }
 }
 
@@ -90,7 +104,6 @@ void ElectroController::run(int temp)
     case SPEED1:
         // Tasks
         trunOnSpeed1();
-        buzzerState = LOW;
 
         // Next state
         if (temp <= temp1 &&
@@ -101,17 +114,18 @@ void ElectroController::run(int temp)
         if (temp >= (temp1 + 2 * hysteresis))
         {
             state = ALARM;
+            turnOnBuzzer();
         }
         break;
 
     case ALARM:
         // Tasks
-        buzzerState = HIGH;
 
         // Next state
         if (temp <= (temp1 + 2 * hysteresis - 1))
         {
             state = SPEED1;
+            turnOffBuzzer();
         }
         break;
 
@@ -125,7 +139,7 @@ void ElectroController::init(int ntcPin, int buzzerPin, int speed0Pin,
                              int speed1Pin, int temp1, int hysteresis,
                              int calibration, int VoltCalibration,
                              int sensorAPIN, int sensorBPIN,
-                             int voltagePIN)
+                             int voltagePIN, int actBuzzPIN)
 {
     // Configure IO pins
     pinNTC = ntcPin;
@@ -136,6 +150,9 @@ void ElectroController::init(int ntcPin, int buzzerPin, int speed0Pin,
 
     pinBuzzer = buzzerPin;
     pinMode(pinBuzzer, OUTPUT);
+
+    pinBuzzAct = actBuzzPIN;
+    pinMode(pinBuzzAct, OUTPUT);
 
     pinSpeed0 = speed0Pin;
     pinMode(pinSpeed0, OUTPUT);
@@ -233,17 +250,25 @@ float ElectroController::getVoltage()
 //--------------------------------------------------------------------
 void ElectroController::turnOnBuzzer()
 {
-    //digitalWrite(pinBuzzer, HIGH);
-    tone(pinBuzzer, 200);
-    sound = true;
+    if (!buzzerState)
+    {
+        digitalWrite(pinBuzzAct, HIGH);
+        buzzerState = HIGH;
+        tone(pinBuzzer, BUZZ_FREQ);
+        sound = true;
+    }
 }
 
 //--------------------------------------------------------------------
 void ElectroController::turnOffBuzzer()
 {
-    //digitalWrite(pinBuzzer, LOW);
-    noTone(pinBuzzer);
-    sound = false;
+    if (buzzerState)
+    {
+        digitalWrite(pinBuzzAct, LOW);
+        buzzerState = LOW;
+        noTone(pinBuzzer);
+        sound = false;
+    }
 }
 
 //--------------------------------------------------------------------
@@ -309,4 +334,22 @@ int ElectroController::getFanSpeed()
     {
         return FAN_SPEED_2;
     }
+}
+
+//--------------------------------------------------------------------
+bool ElectroController::getOverTemperature()
+{
+    return state == ALARM;
+}
+
+//--------------------------------------------------------------------
+bool ElectroController::getOverPressure()
+{
+    return signalB.isActive();
+}
+
+//--------------------------------------------------------------------
+bool ElectroController::getACstatus()
+{
+    return signalA.isActive();
 }

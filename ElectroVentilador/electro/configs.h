@@ -20,8 +20,10 @@
 
 // Delay ms for 
 #define INIT_BUZZ_DELAY 150
+#define INIT_SCREEN_DELAY 3000
 #define BUZZER_ON_DELAY 150
 #define BUZZER_OFF_DELAY 1000
+#define BUZZ_FREQ 2000 // Hz
 
 // Validation values for parameters
 #define MIN_CAL_VAL -5
@@ -32,21 +34,23 @@
 #define MAX_HYST_VAL 6
 
 // PINOUT
-#define PIN_NTC  PA0
-#define PIN_VOLT PA1
-#define PIN_BUZ  PB15
-#define PIN_FAN0 PA9
-#define PIN_FAN1 PA8
-#define BTN_PIN  PA10
-#define PIN_A    PA15
-#define PIN_B    PA12
+#define PIN_NTC     PA0
+#define PIN_VOLT    PA1
+#define PIN_BUZ     PB15
+#define PIN_BUZ_ACT PB5
+#define PIN_FAN0    PA9
+#define PIN_FAN1    PA8
+#define BTN_PIN     PA10
+#define PIN_A       PA15
+#define PIN_B       PA12
 
 // Signals controling directly the fan
 #define WAIT2ACTIVATE 250 // ms
 
 // Voltmeter
 #define VOLT_MIN 12
-#define VOLT_MAX 13
+#define VOLT_MAX 14.5
+#define VOLT_ALARM 14.94
 #define MIN_CAL_VOLT -9
 #define MAX_CAL_VOLT  9
 #define VOLT_FACTOR 0.00459228515625 // 4.7k - 1k
@@ -114,7 +118,7 @@ PROGMEM const char mainText[MAIN_ITEMS][STRING_LENGTH] = {" Temperatura",
 
 // ---------- HMI --------------
 // Thermometer icon
-#define Xicon 140
+#define Xicon 130
 #define Yicon 110
 #define Rtherm 3
 #define Htherm 12
@@ -133,7 +137,24 @@ PROGMEM const char mainText[MAIN_ITEMS][STRING_LENGTH] = {" Temperatura",
 #define Hbat 16
 #define Rbat 3
 #define TEXTgap 2
+#define BatBlinkDelay 500
 
+// Configs
+#define Xcfg1 5
+#define Ycfg1 70
+#define DxCfg1 11
+#define DyCfg1 15
+
+// Configs
+#define Xlabel  80
+#define Ylabel  74
+#define DxLabel 18
+#define DyLabel 18
+#define Ipaso "I"
+#define IIpaso "II"
+#define AClabel "AC"
+#define APlabel "AP"
+#define ATlabel "AT"
 
 // Analog indicator
 #define MAXangle 90
@@ -144,8 +165,8 @@ PROGMEM const char mainText[MAIN_ITEMS][STRING_LENGTH] = {" Temperatura",
 #define NEEDLEbase 3
 #define GAUGEx 105
 #define GAUGEy 123
-#define MAXindicator 110
-#define MINindicator 40
+#define MAXindicator 100
+#define MINindicator 50
 
 // Temperature refresh interval
 #define TEMP_DELAY 500 // ms

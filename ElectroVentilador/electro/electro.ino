@@ -38,14 +38,14 @@ int simulatedTemperature = SIM_Tmin - 1;
 bool simulationAscend = true;
 bool testPrepared = false;
 
+// Controller
+ElectroController controller = ElectroController();
+
 // Configurations
 Configs cfgs = Configs(&tft, &screenTask, &btn);
 
 // HMI
-ThermHMI hmi = ThermHMI(&tft, &screenTask, &cfgs);
-
-// Controller
-ElectroController controller = ElectroController();
+ThermHMI hmi = ThermHMI(&tft, &screenTask, &cfgs, &controller);
 
 void setup(void)
 {
@@ -63,17 +63,17 @@ void setup(void)
   btn.init(BTN_PIN);
   cfgs.init();
 
-  // Init HMI
-  if (screenTask == WORK)
-  {
-    hmi.drawHMItemplate(ST7735_WHITE);
-  }
+  // // Init HMI
+  // if (screenTask == WORK)
+  // {
+  //   hmi.drawHMItemplate();
+  // }
 
   // Init the controller
   controller.init(PIN_NTC, PIN_BUZ, PIN_FAN0, PIN_FAN1,
                   cfgs.getTemp(), cfgs.getHyst(),
                   cfgs.getCalibration(),cfgs.getVoltCalibration(),
-                  PIN_A, PIN_B, PIN_VOLT);
+                  PIN_A, PIN_B, PIN_VOLT, PIN_BUZ_ACT);
 
   // Buzzer sound indicating ready
   int i;
@@ -84,6 +84,13 @@ void setup(void)
     controller.turnOffBuzzer();
     delay(INIT_BUZZ_DELAY / 2);
   }
+  // Init screen
+    if (screenTask == WORK)
+  {
+    hmi.drawHMItemplate();
+    hmi.showAll();
+    delay(INIT_SCREEN_DELAY);
+  }
 }
 
 void loop()
@@ -93,17 +100,15 @@ void loop()
   if (screenTask != TEST)
   {
     controller.run();
-    hmi.update(controller.getTemperature(),
-               controller.getFanSpeed(),
-               controller.getErrorCode(), 
-               controller.getVoltage());
+    hmi.update();
   }
   else
   {
-    controller.run(simulatorGetTemp());
-    hmi.update(simulatorGetTemp(),
-               controller.getFanSpeed(),
-               controller.getErrorCode(), 12.3);
+    //TODO pasar el simulador para el controller
+    // controller.run(simulatorGetTemp());
+    // hmi.update(simulatorGetTemp(),
+    //            controller.getFanSpeed(),
+    //            controller.getErrorCode(), 12.3);
   }
   verifyConfigChanges();
 }
@@ -116,7 +121,7 @@ void verifyConfigChanges()
     controller.setHysteresis(cfgs.getHyst());
     controller.setCalibration(cfgs.getCalibration());
 
-    hmi.drawHMItemplate(ST7735_WHITE);
+    hmi.drawHMItemplate();
 
     screenTask = WORK;
   }
@@ -126,7 +131,7 @@ void verifyConfigChanges()
     controller.setHysteresis(cfgs.getHyst());
     controller.setCalibration(cfgs.getCalibration());
 
-    hmi.drawHMItemplate(ST7735_WHITE);
+    hmi.drawHMItemplate();
 
     testPrepared = true;
   }

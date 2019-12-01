@@ -1,10 +1,11 @@
 #include "hmi.h"
 
 // Constructor
-ThermHMI::ThermHMI(Adafruit_ST7735 *tft, int *st, Configs *cfgs)
+ThermHMI::ThermHMI(Adafruit_ST7735 *tft, int *st, Configs *cfgs, ElectroController *controller)
 {
   _tft = tft;
   _cfgs = cfgs;
+  _ctrl = controller;
   lastFanSpeed = FAN_STOP;
   lastTimeTempUdated = 0;
   lastTimeFanChanged = 0;
@@ -12,6 +13,25 @@ ThermHMI::ThermHMI(Adafruit_ST7735 *tft, int *st, Configs *cfgs)
   screenTask = st;
   indicator_color = ST7735_WHITE;
   lastVoltage = 0;
+}
+
+//--------------------------------------------------------------------
+void ThermHMI::showConfigs()
+{
+  // Prepare text
+  _tft->setTextColor(ST7735_WHITE, ST7735_BLACK);
+  _tft->setTextSize(1);
+
+  // Update
+  int T = _cfgs->getTemp();
+  int H = _cfgs->getHyst();
+
+  _tft->setCursor(Xcfg1, Ycfg1);
+  _tft->print(T);
+  _tft->setCursor(Xcfg1 + DxCfg1, Ycfg1 - DyCfg1);
+  _tft->print(T + H);
+  _tft->setCursor(Xcfg1 + 2 * DxCfg1, Ycfg1 - 2 * DyCfg1);
+  _tft->print(T + 2 * H);
 }
 
 //--------------------------------------------------------------------
@@ -32,31 +52,43 @@ void ThermHMI::drawBateryIcon(int color)
 //--------------------------------------------------------------------
 void ThermHMI::updateVoltage(float voltage)
 {
-  int color = ST7735_GREEN;
-  if (abs(voltage - lastVoltage) > 0.1)
+  int color;
+
+  // Draw batery icon and get the color
+  if (voltage < VOLT_MIN)
   {
-    // Get the correct color
-    if (voltage < VOLT_MIN)
+    if (abs(voltage - lastVoltage) > 0.1)
     {
+      drawBateryIcon(ST7735_WHITE);
       color = ST7735_WHITE;
     }
-    else if (voltage > VOLT_MAX)
+  }
+  else if (voltage > VOLT_MAX)
+  {
+    blinkBatery();
+    color = ST7735_RED;
+  }
+  else
+  {
+    if (abs(voltage - lastVoltage) > 0.1)
     {
-      color = ST7735_RED;
+      drawBateryIcon(ST7735_GREEN);
+      color = ST7735_GREEN;
     }
-    // Draw the batery icon
-    drawBateryIcon(color);
+  }
 
-    // Update text
+  // Update text
+  if (abs(voltage - lastVoltage) > 0.1)
+  {
     _tft->setTextColor(color, ST7735_BLACK);
-    _tft->setTextSize(1);
+    _tft->setTextSize(2);
 
     // Clear
-    _tft->setCursor(TEXTgap, Ybat + Hbat + TEXTgap);
+    _tft->setCursor(Xbat + Wbat + TEXTgap, Ybat + TEXTgap);
     _tft->print("     ");
 
     // Update
-    _tft->setCursor(TEXTgap, Ybat + Hbat + TEXTgap);
+    _tft->setCursor(Xbat + Wbat + TEXTgap, Ybat + TEXTgap);
     _tft->print(voltage, 1);
     _tft->print('V');
 
@@ -65,13 +97,18 @@ void ThermHMI::updateVoltage(float voltage)
 }
 
 //--------------------------------------------------------------------
-void ThermHMI::drawHMItemplate(int color)
+void ThermHMI::drawHMItemplate()
 {
   _tft->fillScreen(ST7735_BLACK);
   drawIcon();
   updateVoltage(0); // Forcing drawing with a different value
   drawFan();
-  drawMarks(ST7735_WHITE);
+  showConfigs();
+  acON = false;
+  overPressureON = false;
+  alarmON = false;
+  speed0ON = false;
+  speed1ON = false;
 }
 
 //--------------------------------------------------------------------
@@ -79,6 +116,24 @@ void ThermHMI::drawFan()
 {
   _tft->fillRect(Xfan, Yfan, 48, 48, ST7735_BLACK);
   _tft->drawBitmap(Xfan, Yfan, fan0, Wfan, Hfan, indicator_color);
+}
+
+//--------------------------------------------------------------------
+void ThermHMI::blinkBatery()
+{
+  if (millis() - lastBateryChanged > BatBlinkDelay)
+  {
+    if (batON)
+    {
+      drawBateryIcon(ST7735_BLACK);
+      batON = false;
+    }
+    else
+    {
+      drawBateryIcon(ST7735_RED);
+      batON = true;
+    }
+  }
 }
 
 //--------------------------------------------------------------------
@@ -111,9 +166,37 @@ void ThermHMI::animateFan(int speed)
 }
 
 //--------------------------------------------------------------------
-void ThermHMI::update(int tempValue, int fanSpeed, int error_code, float voltage)
+int ThermHMI::getColor(float tempValue)
 {
+  int color;
+  if (tempValue < (_cfgs->getTemp() - 4 * _cfgs->getHyst()))
+  {
+    color = ST7735_WHITE;
+  }
+  else if (tempValue < _cfgs->getTemp())
+  {
+    color = ST7735_GREEN;
+  }
+  else if (tempValue < (_cfgs->getTemp() + _cfgs->getHyst()))
+  {
+    color = ORANGE_COLOR;
+  }
+  else
+  {
+    color = ST7735_RED;
+  }
+  return color;
+}
+
+//--------------------------------------------------------------------
+void ThermHMI::update()
+{
+  int tempValue = _ctrl->getTemperature();
+  int fanSpeed = _ctrl->getFanSpeed();
+  int error_code = _ctrl->getErrorCode();
+  float voltage = _ctrl->getVoltage();
   int color = 0;
+
   if (error_code == NO_ERROR)
   {
     last_error_shown = NO_ERROR;
@@ -125,22 +208,7 @@ void ThermHMI::update(int tempValue, int fanSpeed, int error_code, float voltage
     {
       if (millis() - lastTimeTempUdated > TEMP_DELAY)
       {
-        if (tempValue < (_cfgs->getTemp() - 2 * _cfgs->getHyst()))
-        {
-          color = ST7735_WHITE;
-        }
-        else if (tempValue < _cfgs->getTemp())
-        {
-          color = ST7735_GREEN;
-        }
-        else if (tempValue < (_cfgs->getTemp() + _cfgs->getHyst()))
-        {
-          color = ORANGE_COLOR;
-        }
-        else
-        {
-          color = ST7735_RED;
-        }
+        color = getColor(tempValue);
         if (color != indicator_color)
         {
           indicator_color = color;
@@ -152,6 +220,7 @@ void ThermHMI::update(int tempValue, int fanSpeed, int error_code, float voltage
           updateTemp(tempValue);
         }
         updateVoltage(voltage);
+        updateStatusLabels();
         lastTimeTempUdated = millis();
       }
 
@@ -177,6 +246,75 @@ void ThermHMI::update(int tempValue, int fanSpeed, int error_code, float voltage
     showError(error_code);
   }
   lastFanSpeed = fanSpeed;
+}
+
+//--------------------------------------------------------------------
+void ThermHMI::showAll()
+{
+  //drawHMItemplate();
+  updateTemp(99);
+  showStatusLabels();
+  updateVoltage(12.4);
+}
+
+//--------------------------------------------------------------------
+void ThermHMI::showStatusLabels()
+{
+  updateLabel(&acON, true, ST7735_WHITE,
+              AClabel, Xlabel, Ylabel);
+  updateLabel(&overPressureON, true, ST7735_WHITE,
+              APlabel, Xlabel + DxLabel, Ylabel);
+  updateLabel(&alarmON,true, ST7735_RED,
+              ATlabel, Xlabel + 2 * DxLabel, Ylabel);
+  // Fan speeds
+  updateLabel(&speed0ON, true,
+              ST7735_YELLOW, Ipaso, Xlabel + DxLabel / 2, Ylabel - DyLabel);
+  updateLabel(&speed1ON, true, ST7735_RED,
+              IIpaso, Xlabel + 3 * DxLabel / 2, Ylabel - DyLabel);
+}
+
+//--------------------------------------------------------------------
+void ThermHMI::updateStatusLabels()
+{
+  updateLabel(&acON, _ctrl->getACstatus(), ST7735_WHITE,
+              AClabel, Xlabel, Ylabel);
+  updateLabel(&overPressureON, _ctrl->getOverPressure(), ST7735_WHITE,
+              APlabel, Xlabel + DxLabel, Ylabel);
+  updateLabel(&alarmON, _ctrl->getOverTemperature(), ST7735_RED,
+              ATlabel, Xlabel + 2 * DxLabel, Ylabel);
+  // Fan speeds
+  updateLabel(&speed0ON, (_ctrl->getFanSpeed() == SPEED0 || _ctrl->getFanSpeed() == SPEED1),
+              ST7735_YELLOW, Ipaso, Xlabel + DxLabel / 2, Ylabel - DyLabel);
+  updateLabel(&speed1ON, _ctrl->getFanSpeed() == SPEED1, ST7735_RED,
+              IIpaso, Xlabel + 3 * DxLabel / 2, Ylabel - DyLabel);
+}
+
+//--------------------------------------------------------------------
+void ThermHMI::updateLabel(bool *previousSatus, bool status,
+                           int color, char *label, int x, int y)
+{
+  if (*previousSatus)
+  {
+    if (!status)
+    {
+      _tft->setCursor(x, y);
+      _tft->setTextSize(1);
+      _tft->setTextColor(color, ST7735_BLACK);
+      _tft->print("  ");
+      *previousSatus = false;
+    }
+  }
+  else
+  {
+    if (status)
+    {
+      _tft->setCursor(x, y);
+      _tft->setTextColor(color, ST7735_BLACK);
+      _tft->setTextSize(1);
+      _tft->print(label);
+      *previousSatus = true;
+    }
+  }
 }
 
 //--------------------------------------------------------------------
@@ -210,44 +348,12 @@ void ThermHMI::showError(int error_code)
 }
 
 //--------------------------------------------------------------------
-void ThermHMI::drawNeedle(int value, int color)
-{
-  float angle;
-  if (value > MAXindicator)
-  {
-    angle = 90 / 57.32;
-  }
-  else if (value < MINindicator)
-  {
-    angle = 0;
-  }
-  else
-  {
-    angle = 90 / 57.32 * (value - MINindicator) / (MAXindicator - MINindicator);
-  }
-  int x0 = GAUGEx - INNERneedle * cos(angle);
-  int y0 = GAUGEy - INNERneedle * sin(angle);
-  int x3 = GAUGEx - OUTERradius * cos(angle);
-  int y3 = GAUGEy - OUTERradius * sin(angle);
-  int x1 = x0 - NEEDLEbase * sin(angle);
-  int y1 = y0 + NEEDLEbase * cos(angle);
-  int x2 = x0 + NEEDLEbase * sin(angle);
-  int y2 = y0 - NEEDLEbase * cos(angle);
-
-  _tft->fillTriangle(x3, y3, x1, y1, x2, y2, color);
-}
-
-//--------------------------------------------------------------------
 void ThermHMI::updateTemp(int value)
 {
   int xShift = 64;
 
-  // Clear needle
-  drawNeedle(current_value, ST7735_BLACK);
+  drawBar(value);
   current_value = value;
-  // Draw new needle
-  drawMarks(ST7735_WHITE);
-  drawNeedle(value, ST7735_WHITE);
 
   if (value > 99)
   {
@@ -271,55 +377,27 @@ void ThermHMI::updateTemp(int value)
 }
 
 //--------------------------------------------------------------------
-void ThermHMI::drawMarks(int color)
+void ThermHMI::drawBar(int temp)
 {
-  int i, x0, y0, x1, y1, x2, y2, x3, y3, out, in, nbeams;
-  float angle, minAngle, maxAngle, deltaAngle;
-  angle = MAXangle / (Nmarks - 1) / 57.32;
-  // Marks
-  for (i = 0; i < Nmarks; i++)
+  int i, color, k;
+  float iValue;
+
+  for (i = 0; i < nRegs; i++)
   {
-    _tft->drawLine(GAUGEx - INNERradius * cos(i * angle), GAUGEy - INNERradius * sin(i * angle),
-                   GAUGEx - OUTERradius * cos(i * angle), GAUGEy - OUTERradius * sin(i * angle),
-                   color);
+    iValue = i * (MAXindicator - MINindicator) / nRegs + MINindicator;
+    if (iValue > temp)
+    {
+      color = ST7735_BLACK;
+    }
+    else
+    {
+      color = getColor(iValue);
+    }
+    for (k = regPtrs[i]; k < regPtrs[i + 1]; k++)
+    {
+      _tft->drawPixel(Xcoords[k], Ycoords[k], color);
+    }
   }
-  // Cool
-  out = OUTERradius - 2;
-  in = INNERradius + 1;
-  x0 = GAUGEx - out * cos(angle / 6);
-  y0 = GAUGEy - out * sin(angle / 6);
-  x1 = GAUGEx - in * cos(angle / 6);
-  y1 = GAUGEy - in * sin(angle / 6);
-  x2 = GAUGEx - out * cos(2 * angle / 6);
-  y2 = GAUGEy - out * sin(2 * angle / 6);
-  x3 = GAUGEx - in * cos(2 * angle / 6);
-  y3 = GAUGEy - in * sin(2 * angle / 6);
-  _tft->fillTriangle(x0, y0, x1, y1 - 1, x2, y2 + 1, ST7735_WHITE);
-  _tft->fillTriangle(x1, y1 - 1, x3, y3, x2, y2 + 1, ST7735_WHITE);
-
-  // Hot
-  x0 = GAUGEx - out * cos(22 * angle / 6);
-  y0 = GAUGEy - out * sin(22 * angle / 6);
-  x1 = GAUGEx - in * cos(22 * angle / 6);
-  y1 = GAUGEy - in * sin(22 * angle / 6);
-  x2 = GAUGEx - out * cos(23 * angle / 6);
-  y2 = GAUGEy - out * sin(23 * angle / 6);
-  x3 = GAUGEx - in * cos(23 * angle / 6);
-  y3 = GAUGEy - in * sin(23 * angle / 6);
-  _tft->fillTriangle(x0, y0, x1, y1 - 1, x2, y2 + 1, ST7735_RED);
-  _tft->fillTriangle(x1 - 1, y1 - 1, x3, y3, x2, y2 + 1, ST7735_RED);
-
-  // OK
-  x0 = GAUGEx - out * cos(13 * angle / 6);
-  y0 = GAUGEy - out * sin(13 * angle / 6);
-  x1 = GAUGEx - in * cos(13 * angle / 6);
-  y1 = GAUGEy - in * sin(13 * angle / 6);
-  x2 = GAUGEx - out * cos(14 * angle / 6);
-  y2 = GAUGEy - out * sin(14 * angle / 6);
-  x3 = GAUGEx - in * cos(14 * angle / 6);
-  y3 = GAUGEy - in * sin(14 * angle / 6);
-  _tft->fillTriangle(x0 + 1, y0 + 2, x1, y1 + 1, x2 + 1, y2 + 1, ST7735_GREEN);
-  _tft->fillTriangle(x1, y1 + 1, x3, y3, x2 + 1, y2 + 1, ST7735_GREEN);
 }
 
 //--------------------------------------------------------------------
