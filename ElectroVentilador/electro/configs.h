@@ -7,7 +7,7 @@
 
 // ------------ Configuration---------------------
 // Time delay for returning to IDLE state
-#define WAITING_TIME 20000 // ms
+#define WAITING_TIME 12000 // ms
 // Time delay for changing between menu elements
 #define CHANGE_TIME 1000 // ms
 
@@ -21,11 +21,12 @@
 // Delay ms for 
 #define INIT_BUZZ_DELAY 150
 #define INIT_SCREEN_DELAY 3000
-#define BUZZER_ON_DELAY 150
-#define BUZZER_OFF_DELAY 1000
+#define BUZZER_ON_DELAY 200
+#define BUZZER_OFF_DELAY 800
 #define BUZZ_FREQ 2000 // Hz
 
 // Validation values for parameters
+#define BASE_SHIFT 100
 #define MIN_CAL_VAL -5
 #define MAX_CAL_VAL 5
 #define MIN_TEMP_VAL 75
@@ -42,7 +43,7 @@
 #define PIN_FAN1    PA8
 #define BTN_PIN     PA10
 #define PIN_A       PA15
-#define PIN_B       PA12
+#define PIN_B       PB4
 
 // Signals controling directly the fan
 #define WAIT2ACTIVATE 250 // ms
@@ -51,15 +52,19 @@
 #define VOLT_MIN 12
 #define VOLT_MAX 14.5
 #define VOLT_ALARM 14.94
-#define MIN_CAL_VOLT -9
-#define MAX_CAL_VOLT  9
+#define MIN_CAL_VOLT -5
+#define MAX_CAL_VOLT  5
 #define VOLT_FACTOR 0.00459228515625 // 4.7k - 1k
 
 
 // Simulator
 #define SIM_Tmin 70
 #define SIM_Tmax 100
-#define SIM_INTERVAL 500 // ms
+#define SIM_Vmin 11
+#define SIM_Vmax 16
+#define SIM_Vinit 12
+#define SIM_COUNT 5
+#define SIM_INTERVAL 1000 // ms
 
 // Fan Speeds
 enum fan_speeds

@@ -33,9 +33,6 @@ Button btn = Button();
 int screenTask = WORK;
 
 // Simulator
-unsigned int lastTimeUpdated = 0;
-int simulatedTemperature = SIM_Tmin - 1;
-bool simulationAscend = true;
 bool testPrepared = false;
 
 // Controller
@@ -62,12 +59,6 @@ void setup(void)
   // Setups
   btn.init(BTN_PIN);
   cfgs.init();
-
-  // // Init HMI
-  // if (screenTask == WORK)
-  // {
-  //   hmi.drawHMItemplate();
-  // }
 
   // Init the controller
   controller.init(PIN_NTC, PIN_BUZ, PIN_FAN0, PIN_FAN1,
@@ -104,11 +95,8 @@ void loop()
   }
   else
   {
-    //TODO pasar el simulador para el controller
-    // controller.run(simulatorGetTemp());
-    // hmi.update(simulatorGetTemp(),
-    //            controller.getFanSpeed(),
-    //            controller.getErrorCode(), 12.3);
+    controller.simulate();
+    hmi.update();
   }
   verifyConfigChanges();
 }
@@ -120,6 +108,7 @@ void verifyConfigChanges()
     controller.setTemp1(cfgs.getTemp());
     controller.setHysteresis(cfgs.getHyst());
     controller.setCalibration(cfgs.getCalibration());
+    controller.setVoltCalibration(cfgs.getVoltCalibration());
 
     hmi.drawHMItemplate();
 
@@ -130,37 +119,10 @@ void verifyConfigChanges()
     controller.setTemp1(cfgs.getTemp());
     controller.setHysteresis(cfgs.getHyst());
     controller.setCalibration(cfgs.getCalibration());
+    controller.setVoltCalibration(cfgs.getVoltCalibration());
 
     hmi.drawHMItemplate();
 
     testPrepared = true;
   }
-}
-
-int simulatorGetTemp()
-{
-  if (millis() - lastTimeUpdated > SIM_INTERVAL)
-  {
-    if (simulationAscend)
-    {
-      simulatedTemperature++;
-      if (simulatedTemperature >= SIM_Tmax)
-      {
-        simulationAscend = false;
-      }
-    }
-    else
-    {
-      simulatedTemperature--;
-      if (simulatedTemperature < SIM_Tmin)
-      {
-        screenTask = WORK;
-        testPrepared = false;
-        simulationAscend = true;
-      }
-    }
-    lastTimeUpdated = millis();
-  }
-
-  return simulatedTemperature;
 }

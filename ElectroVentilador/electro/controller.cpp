@@ -14,6 +14,8 @@ void ElectroController::run()
 {
     readTemperature();
     readVoltage();
+    overPressure = signalB.isActive();
+    acStatus = signalA.isActive();
     run(temperature);
 }
 
@@ -31,6 +33,80 @@ void ElectroController::handleOverVoltage()
 }
 
 //--------------------------------------------------------------------
+void ElectroController::simulate()
+{
+    if (millis() - lastTimeUpdated > SIM_INTERVAL)
+    {
+        switch (simulationState)
+        {
+        case TEMP_UP:
+            simulatedTemperature++;
+            if (simulatedTemperature >= SIM_Tmax)
+            {
+                simulationState = TEMP_DOWN;
+            }
+            break;
+
+        case TEMP_DOWN:
+            simulatedTemperature--;
+            if (simulatedTemperature < SIM_Tmin)
+            {
+                simulationState = VOLT_UP;
+            }
+            break;
+
+        case VOLT_UP:
+            simulatedVoltage += 0.5;
+            if (simulatedVoltage > SIM_Vmax)
+            {
+                simulationState = VOLT_DOWN;
+            }
+            break;
+
+        case VOLT_DOWN:
+            simulatedVoltage -= 0.5;
+            if (simulatedVoltage < SIM_Vmin)
+            {
+                simulationState = AC;
+                simulatedVoltage = SIM_Vinit;
+            }
+            break;
+
+        case AC:
+            simCount++;
+            acStatus = true;
+            if (simCount > SIM_COUNT)
+            {
+                simulationState = AP;
+                simCount = 0;
+                acStatus = false;
+            }
+            break;
+
+        case AP:
+            simCount++;
+            overPressure = true;
+            if (simCount > SIM_COUNT)
+            {
+                simulationState = TEMP_UP;
+                simCount = 0;
+                overPressure = false;
+            }
+            break;
+
+        default:
+            break;
+        }
+        // Update values
+        temperature = simulatedTemperature;
+        voltage = simulatedVoltage;
+
+        lastTimeUpdated = millis();
+    }
+    run(temperature);
+}
+
+//--------------------------------------------------------------------
 void ElectroController::handleBuzzer()
 {
     // Over voltage Monitor
@@ -44,6 +120,7 @@ void ElectroController::handleBuzzer()
             {
                 lastBuzzerChange = millis();
                 noTone(pinBuzzer);
+                digitalWrite(pinBuzzAct, LOW);
                 sound = false;
             }
         }
@@ -53,6 +130,7 @@ void ElectroController::handleBuzzer()
             {
                 lastBuzzerChange = millis();
                 tone(pinBuzzer, BUZZ_FREQ);
+                digitalWrite(pinBuzzAct, HIGH);
                 sound = true;
             }
         }
@@ -76,8 +154,8 @@ void ElectroController::run(int temp)
 
         // Next state
         if (temp >= temp1 ||
-            signalA.isActive() ||
-            signalB.isActive())
+            acStatus ||
+            overPressure)
         {
             state = SPEED0;
         }
@@ -89,13 +167,13 @@ void ElectroController::run(int temp)
         trunOnSpeed0();
         // Next state
         if ((temp <= (temp1 - hysteresis)) &&
-            !signalA.isActive() &&
-            !signalB.isActive())
+            !acStatus &&
+            !overPressure)
         {
             state = IDLE;
         }
         if (temp >= (temp1 + hysteresis) ||
-            signalB.isActive())
+            overPressure)
         {
             state = SPEED1;
         }
@@ -107,7 +185,7 @@ void ElectroController::run(int temp)
 
         // Next state
         if (temp <= temp1 &&
-            !signalB.isActive())
+            !overPressure)
         {
             state = SPEED0;
         }
@@ -179,6 +257,11 @@ void ElectroController::init(int ntcPin, int buzzerPin, int speed0Pin,
     state = IDLE;
     buzzerState = LOW;
     sound = false;
+    simulatedTemperature = SIM_Tmin - 1;
+    simulatedVoltage = SIM_Vinit;
+    lastTimeUpdated = 0;
+    simulationState = TEMP_UP;
+    simCount = 0;
 }
 
 //--------------------------------------------------------------------
@@ -193,7 +276,6 @@ void ElectroController::readVoltage()
     float volt = (val * VOLT_FACTOR + (float)voltCalibration / 10);
 
     voltFiler.insertValue(volt);
-    //voltage = volt;
     voltage = voltFiler.getValue();
 }
 
@@ -345,11 +427,11 @@ bool ElectroController::getOverTemperature()
 //--------------------------------------------------------------------
 bool ElectroController::getOverPressure()
 {
-    return signalB.isActive();
+    return overPressure;
 }
 
 //--------------------------------------------------------------------
 bool ElectroController::getACstatus()
 {
-    return signalA.isActive();
+    return acStatus;
 }

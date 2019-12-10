@@ -30,9 +30,9 @@ void Configs::init()
   EEPROM.read(EEPROM.PageBase0 + BASE_ADDRESS + 4, &hyst);
   hysteresis = hyst;
   EEPROM.read(EEPROM.PageBase0 + BASE_ADDRESS + 8, &calib);
-  calibration = calib - abs(MIN_CAL_VAL);
+  calibration = calib - BASE_SHIFT;
   EEPROM.read(EEPROM.PageBase0 + BASE_ADDRESS + 12, &voltCalib);
-  voltCalibration = voltCalib - abs(MIN_CAL_VOLT);
+  voltCalibration = voltCalib - BASE_SHIFT;
 
   // validate configs
   validateConfigs();
@@ -47,8 +47,8 @@ void Configs::validateConfigs()
 {
   if (temp1 < MIN_TEMP_VAL || temp1 > MAX_TEMP_VAL ||
       hysteresis < MIN_HYST_VAL || hysteresis > MAX_HYST_VAL ||
-      calibration < MIN_CAL_VAL || calibration > MAX_CAL_VAL ||
-      voltCalibration < MIN_CAL_VOLT || voltCalibration > MAX_CAL_VOLT)
+      calibration < -20 || calibration > 20 ||
+      voltCalibration < -20 || voltCalibration > 20)
   {
     configurationNeeded = true;
   }
@@ -109,7 +109,6 @@ void Configs::prepareEditScreen(const char text[][STRING_LENGTH])
   }
 }
 
-
 //--------------------------------------------------------------------
 void Configs::printLargeVoltValue()
 {
@@ -121,7 +120,7 @@ void Configs::printLargeVoltValue()
 
   // Print
   _tft->setCursor(0, 48);
-  _tft->print((float)value/10,1);
+  _tft->print((float)value / 10, 1);
 }
 //--------------------------------------------------------------------
 void Configs::printLargeValue()
@@ -148,23 +147,6 @@ void Configs::drawMenu(const char text[][STRING_LENGTH], int nItems)
   for (i = 0; i < nItems; i++)
   {
     _tft->println(text[i]);
-    // switch (i)
-    // {
-    // case 0:
-    //   printValue(temp1);
-    //   break;
-    // case 1:
-    //   printValue(hysteresis);
-    //   break;
-    // case 2:
-    //   printValue(calibration);
-    //   break;
-    // case 3:
-    //   printValue(voltCalibration);
-    //   break;
-    // default:
-    //   break;
-    // }
   }
 }
 
@@ -172,7 +154,7 @@ void Configs::drawMenu(const char text[][STRING_LENGTH], int nItems)
 void Configs::printVoltValue(int val)
 {
   _tft->print(' ');
-  _tft->print((float)val/10);
+  _tft->print((float)val / 10);
   _tft->println('V');
 }
 
@@ -396,22 +378,31 @@ void Configs::saveHyst()
 //--------------------------------------------------------------------
 void Configs::saveCalibration()
 {
-  uint16 val = (uint16)(value + abs(MIN_CAL_VAL));
+  if (value == 0) // Reset calibration
+  {
+    calibration = 0;
+  }
+  else
+  {
+    calibration += value; // Shift current calibration
+  }
+  uint16 val = (uint16)(calibration + BASE_SHIFT);
   EEPROM.write(EEPROM.PageBase0 + BASE_ADDRESS + 8, val);
-  val = 0;
-  EEPROM.read(EEPROM.PageBase0 + BASE_ADDRESS + 8, &val);
-  calibration = value;
   validateConfigs();
 }
-
 
 //--------------------------------------------------------------------
 void Configs::saveVoltCalibration()
 {
-  uint16 val = (uint16)(value + abs(MIN_CAL_VOLT));
+  if (value == 0) // Reset calibration
+  {
+    voltCalibration = 0;
+  }
+  else
+  {
+    voltCalibration += value; // Shift current calibration
+  }
+  uint16 val = (uint16)(voltCalibration + BASE_SHIFT);
   EEPROM.write(EEPROM.PageBase0 + BASE_ADDRESS + 12, val);
-  val = 0;
-  EEPROM.read(EEPROM.PageBase0 + BASE_ADDRESS + 12, &val);
-  voltCalibration = value;
   validateConfigs();
 }

@@ -13,6 +13,16 @@ enum states
     ALARM
 };
 
+enum simulationStates
+{
+    TEMP_UP,
+    TEMP_DOWN,
+    VOLT_UP,
+    VOLT_DOWN,
+    AC,
+    AP
+};
+
 class ElectroController
 {
 
@@ -32,7 +42,8 @@ public:
         setCalibration(int cal),
         setVoltCalibration(int cal),
         turnOnBuzzer(),
-        turnOffBuzzer();
+        turnOffBuzzer(),
+        simulate();
 
     int getErrorCode(),
         getFanSpeed();
@@ -55,12 +66,16 @@ private:
         hysteresis,
         calibration,
         voltCalibration,
-        error_code;
+        error_code,
+        simulatedTemperature,
+        simCount;
 
     float voltage,
-        temperature;
+          simulatedVoltage,
+          temperature;
 
     states state;
+    simulationStates simulationState;
     MeanFilter TempFilter,
         voltFiler;
 
@@ -68,12 +83,12 @@ private:
         signalB;
 
     bool buzzerState,
+        overPressure,
+        acStatus,
         sound;
 
-    // bool signalAisActive(),
-    //      signalBisActive();
-
-    unsigned int lastBuzzerChange;
+    unsigned int lastBuzzerChange,
+                 lastTimeUpdated;
 
     void trunOnSpeed0(),
         trunOffSpeed0(),
