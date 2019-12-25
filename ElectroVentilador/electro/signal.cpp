@@ -9,7 +9,7 @@ ExternalSignal::ExternalSignal()
 void ExternalSignal::init(int pin)
 {
     digitalPIN = pin;
-    pinMode(digitalPIN, INPUT_PULLUP);
+    pinMode(digitalPIN, INPUT_PULLDOWN);
 
     estado = INACTIVE;
 }
@@ -26,7 +26,7 @@ void ExternalSignal::run()
     switch (estado)
     {
     case INACTIVE:
-        if (digitalRead(digitalPIN) == LOW)
+        if (digitalRead(digitalPIN) == HIGH)
         {
             estado = WAIT;
             startWait = millis();
@@ -37,13 +37,13 @@ void ExternalSignal::run()
         {
             estado = ACTIVE;
         }
-        if (digitalRead(digitalPIN) == HIGH)
+        if (digitalRead(digitalPIN) == LOW)
         {
             estado = INACTIVE;
         }
         break;
     case ACTIVE:
-        if (digitalRead(digitalPIN) == HIGH)
+        if (digitalRead(digitalPIN) == LOW)
         {
             estado = INACTIVE;
         }
