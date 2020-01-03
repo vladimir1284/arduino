@@ -510,11 +510,11 @@ int8_t Modbus::poll()
  * @return 0 if no query, 1..4 if communication error, >4 if correct query processed
  * @ingroup loop
  */
-int8_t Modbus::poll(uint16_t *regs, uint8_t u8size)
+int8_t Modbus::poll(MemoryHandler *mh)
 {
 
-    au16regs = regs;
-    u8regsize = u8size;
+    // au16regs = regs;
+    u8regsize = REGISTER_SIZE;
     uint8_t u8current;
 
     // check if there is any incoming frame
@@ -564,23 +564,23 @@ int8_t Modbus::poll(uint16_t *regs, uint8_t u8size)
     {
     case MB_FC_READ_COILS:
     case MB_FC_READ_DISCRETE_INPUT:
-        return process_FC1(regs, u8size);
+        return process_FC1(mh);
         break;
     case MB_FC_READ_INPUT_REGISTER:
     case MB_FC_READ_REGISTERS:
-        return process_FC3(regs, u8size);
+        return process_FC3(mh);
         break;
     case MB_FC_WRITE_COIL:
-        return process_FC5(regs, u8size);
+        return process_FC5(mh);
         break;
     case MB_FC_WRITE_REGISTER:
-        return process_FC6(regs, u8size);
+        return process_FC6(mh);
         break;
     case MB_FC_WRITE_MULTIPLE_COILS:
-        return process_FC15(regs, u8size);
+        return process_FC15(mh);
         break;
     case MB_FC_WRITE_MULTIPLE_REGISTERS:
-        return process_FC16(regs, u8size);
+        return process_FC16(mh);
         break;
     default:
         break;
@@ -669,7 +669,7 @@ void Modbus::sendTxBuffer()
     }
 
     // transfer buffer to serial line
-    port->write( au8Buffer, u8BufferSize );
+    port->write(au8Buffer, u8BufferSize);
 
     if (u8txenpin > 1)
     {
@@ -677,7 +677,8 @@ void Modbus::sendTxBuffer()
         port->flush();
         digitalWrite(u8txenpin, LOW);
     }
-    while (port->read() >= 0);
+    while (port->read() >= 0)
+        ;
 
     u8BufferSize = 0;
 
@@ -900,7 +901,7 @@ void Modbus::get_FC3()
  * @return u8BufferSize Response to master length
  * @ingroup discrete
  */
-int8_t Modbus::process_FC1(uint16_t *regs, uint8_t u8size)
+int8_t Modbus::process_FC1(MemoryHandler *mh)
 {
     uint8_t u8currentRegister, u8currentBit, u8bytesno, u8bitsno;
     uint8_t u8CopyBufferSize;
@@ -923,13 +924,18 @@ int8_t Modbus::process_FC1(uint16_t *regs, uint8_t u8size)
     for (u16currentCoil = 0; u16currentCoil < u16Coilno; u16currentCoil++)
     {
         u16coil = u16StartCoil + u16currentCoil;
-        u8currentRegister = (uint8_t)(u16coil / 16);
-        u8currentBit = (uint8_t)(u16coil % 16);
+        // u8currentRegister = (uint8_t)(u16coil / 16);
+        // u8currentBit = (uint8_t)(u16coil % 16);
 
-        bitWrite(
-            au8Buffer[u8BufferSize],
-            u8bitsno,
-            bitRead(regs[u8currentRegister], u8currentBit));
+        int value = mh->getCoilValue(u16coil);
+
+        if (value >= 0)
+        {
+            bitWrite(
+                au8Buffer[u8BufferSize],
+                u8bitsno,
+                value);
+        }
         u8bitsno++;
 
         if (u8bitsno > 7)
@@ -955,7 +961,7 @@ int8_t Modbus::process_FC1(uint16_t *regs, uint8_t u8size)
  * @return u8BufferSize Response to master length
  * @ingroup register
  */
-int8_t Modbus::process_FC3(uint16_t *regs, uint8_t u8size)
+int8_t Modbus::process_FC3(MemoryHandler *mh)
 {
 
     uint8_t u8StartAdd = word(au8Buffer[ADD_HI], au8Buffer[ADD_LO]);
@@ -968,10 +974,15 @@ int8_t Modbus::process_FC3(uint16_t *regs, uint8_t u8size)
 
     for (i = u8StartAdd; i < u8StartAdd + u8regsno; i++)
     {
-        au8Buffer[u8BufferSize] = highByte(regs[i]);
-        u8BufferSize++;
-        au8Buffer[u8BufferSize] = lowByte(regs[i]);
-        u8BufferSize++;
+        int value = mh->getRegValue(i);
+
+        if (value >= 0)
+        {
+            au8Buffer[u8BufferSize] = highByte(value);
+            u8BufferSize++;
+            au8Buffer[u8BufferSize] = lowByte(value);
+            u8BufferSize++;
+        }
     }
     u8CopyBufferSize = u8BufferSize + 2;
     sendTxBuffer();
@@ -987,21 +998,24 @@ int8_t Modbus::process_FC3(uint16_t *regs, uint8_t u8size)
  * @return u8BufferSize Response to master length
  * @ingroup discrete
  */
-int8_t Modbus::process_FC5(uint16_t *regs, uint8_t u8size)
+int8_t Modbus::process_FC5(MemoryHandler *mh)
 {
     uint8_t u8currentRegister, u8currentBit;
     uint8_t u8CopyBufferSize;
     uint16_t u16coil = word(au8Buffer[ADD_HI], au8Buffer[ADD_LO]);
 
-    // point to the register and its bit
-    u8currentRegister = (uint8_t)(u16coil / 16);
-    u8currentBit = (uint8_t)(u16coil % 16);
+    // // point to the register and its bit
+    // u8currentRegister = (uint8_t)(u16coil / 16);
+    // u8currentBit = (uint8_t)(u16coil % 16);
 
-    // write to coil
-    bitWrite(
-        regs[u8currentRegister],
-        u8currentBit,
-        au8Buffer[NB_HI] == 0xff);
+    // // write to coil
+    // bitWrite(
+    //     regs[u8currentRegister],
+    //     u8currentBit,
+    //     au8Buffer[NB_HI] == 0xff);
+
+    mh->setCoilValue(u16coil, au8Buffer[NB_HI] == 0xff);
+    // TODO handle error
 
     // send answer to master
     u8BufferSize = 6;
@@ -1019,14 +1033,15 @@ int8_t Modbus::process_FC5(uint16_t *regs, uint8_t u8size)
  * @return u8BufferSize Response to master length
  * @ingroup register
  */
-int8_t Modbus::process_FC6(uint16_t *regs, uint8_t u8size)
+int8_t Modbus::process_FC6(MemoryHandler *mh)
 {
 
     uint8_t u8add = word(au8Buffer[ADD_HI], au8Buffer[ADD_LO]);
     uint8_t u8CopyBufferSize;
     uint16_t u16val = word(au8Buffer[NB_HI], au8Buffer[NB_LO]);
 
-    regs[u8add] = u16val;
+    // regs[u8add] = u16val;
+    mh->setRegValue(u8add, u16val);
 
     // keep the same header
     u8BufferSize = RESPONSE_SIZE;
@@ -1045,7 +1060,7 @@ int8_t Modbus::process_FC6(uint16_t *regs, uint8_t u8size)
  * @return u8BufferSize Response to master length
  * @ingroup discrete
  */
-int8_t Modbus::process_FC15(uint16_t *regs, uint8_t u8size)
+int8_t Modbus::process_FC15(MemoryHandler *mh)
 {
     uint8_t u8currentRegister, u8currentBit, u8frameByte, u8bitsno;
     uint8_t u8CopyBufferSize;
@@ -1063,17 +1078,18 @@ int8_t Modbus::process_FC15(uint16_t *regs, uint8_t u8size)
     {
 
         u16coil = u16StartCoil + u16currentCoil;
-        u8currentRegister = (uint8_t)(u16coil / 16);
-        u8currentBit = (uint8_t)(u16coil % 16);
+        // u8currentRegister = (uint8_t)(u16coil / 16);
+        // u8currentBit = (uint8_t)(u16coil % 16);
 
         bTemp = bitRead(
             au8Buffer[u8frameByte],
             u8bitsno);
 
-        bitWrite(
-            regs[u8currentRegister],
-            u8currentBit,
-            bTemp);
+        // bitWrite(
+        //     regs[u8currentRegister],
+        //     u8currentBit,
+        //     bTemp);
+        mh->setCoilValue(u16coil, bTemp);
 
         u8bitsno++;
 
@@ -1100,7 +1116,7 @@ int8_t Modbus::process_FC15(uint16_t *regs, uint8_t u8size)
  * @return u8BufferSize Response to master length
  * @ingroup register
  */
-int8_t Modbus::process_FC16(uint16_t *regs, uint8_t u8size)
+int8_t Modbus::process_FC16(MemoryHandler *mh)
 {
     uint8_t u8func = au8Buffer[FUNC]; // get the original FUNC code
     uint8_t u8StartAdd = au8Buffer[ADD_HI] << 8 | au8Buffer[ADD_LO];
@@ -1121,7 +1137,8 @@ int8_t Modbus::process_FC16(uint16_t *regs, uint8_t u8size)
             au8Buffer[(BYTE_CNT + 1) + i * 2],
             au8Buffer[(BYTE_CNT + 2) + i * 2]);
 
-        regs[u8StartAdd + i] = temp;
+        // regs[u8StartAdd + i] = temp;
+        mh->setRegValue(u8StartAdd + i, temp);
     }
     u8CopyBufferSize = u8BufferSize + 2;
     sendTxBuffer();

@@ -15,7 +15,9 @@
 class TankParameters {
 
   public:
-    TankParameters(uint16 baseAddress = 0);
+    TankParameters();
+
+    void init(int baseAdr);
 
     // Getters
     int getHeight();
@@ -30,7 +32,7 @@ class TankParameters {
     int setMin(int newValue);
 
   // Must be protected in order to have multiple instances!!!!
-  protected:
+  private:
     uint16 height; // Distance from the sensor to the bottom (cm)
     uint16 gap;    // Distance from the sensor to the maximun level of water (cm)
     uint16 restart;// Percent of the capacity for restart pumping

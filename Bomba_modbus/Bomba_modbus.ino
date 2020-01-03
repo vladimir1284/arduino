@@ -10,8 +10,8 @@
 #include "hmi.h"
 #include "pump_controller.h"
 #include "ModbusRtu.h"
+#include "MB_memory_handler.h"
 #include "configs.h"
-
 
 // Option 1 (recommended): must use the hardware SPI pins
 // TFT_SCLK PA5   // SPI 1
@@ -28,14 +28,16 @@ PumpHMI hmi = PumpHMI(&tft);
 
 #define TXEN PB12
 Modbus slave(1, 3, TXEN); // this is slave @1 and RS-485
-// data array for modbus network sharing
-uint16_t au16data[16] = {
-    3, 1415, 9265, 4, 2, 7182, 28182, 8, 0, 0, 0, 0, 0, 0, 1, -1};
+MemoryHandler MBmemoryHandler = MemoryHandler(&pump);
+
+// // data array for modbus network sharing
+// uint16_t au16data[16] = {
+//     3, 1415, 9265, 4, 2, 7182, 28182, 8, 0, 0, 0, 0, 0, 0, 1, -1};
 
 // // For simulation
 // int levelUp;
 // int levelDown;
-unsigned int lastPrint = 0;
+// unsigned int lastPrint = 0;
 
 // // ------------------------- Tasks -----------------------------
 static void vPumpControlTask(void *pvParameters)
@@ -53,7 +55,7 @@ static void vModbusTask(void *pvParameters)
 {
   for (;;)
   {
-    slave.poll(au16data, 16);
+    slave.poll(&MBmemoryHandler);
   }
 }
 
@@ -86,11 +88,11 @@ void setup(void)
   tft.setTextSize(1);
   tft.setTextColor(ST7735_WHITE, ST7735_BLACK);
 
-  // Setup HMI configurations
-  hmi.drawHMItemplate(pump.getLowerTankMin(), pump.getUpperTankMin());
-
   // Setup Pump Controller configurations
   pump.init();
+
+  // Setup HMI configurations
+  hmi.drawHMItemplate(pump.getLowerTankMin(), pump.getUpperTankMin());
 
   // ----------------------- Register Tasks ---------------------------
   xTaskCreate(vPumpControlTask,

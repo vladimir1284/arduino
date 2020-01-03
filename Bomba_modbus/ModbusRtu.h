@@ -40,6 +40,7 @@
 #include <inttypes.h>
 #include "Arduino.h"
 #include "Print.h"
+#include "MB_memory_handler.h"
 
 /**
  * @struct modbus_t
@@ -176,12 +177,12 @@ private:
     uint8_t validateRequest();
     void get_FC1();
     void get_FC3();
-    int8_t process_FC1(uint16_t *regs, uint8_t u8size);
-    int8_t process_FC3(uint16_t *regs, uint8_t u8size);
-    int8_t process_FC5(uint16_t *regs, uint8_t u8size);
-    int8_t process_FC6(uint16_t *regs, uint8_t u8size);
-    int8_t process_FC15(uint16_t *regs, uint8_t u8size);
-    int8_t process_FC16(uint16_t *regs, uint8_t u8size);
+    int8_t process_FC1(MemoryHandler *mh);
+    int8_t process_FC3(MemoryHandler *mh);
+    int8_t process_FC5(MemoryHandler *mh);
+    int8_t process_FC6(MemoryHandler *mh);
+    int8_t process_FC15(MemoryHandler *mh);
+    int8_t process_FC16(MemoryHandler *mh);
     void buildException(uint8_t u8exception); // build exception message
 
 public:
@@ -198,7 +199,7 @@ public:
     boolean getTimeOutState();                   //!<get communication watch-dog timer state
     int8_t query(modbus_t telegram);             //!<only for master
     int8_t poll();                               //!<cyclic poll for master
-    int8_t poll(uint16_t *regs, uint8_t u8size); //!<cyclic poll for slave
+    int8_t poll(MemoryHandler *mh); //!<cyclic poll for slave
     uint16_t getInCnt();                         //!<number of incoming messages
     uint16_t getOutCnt();                        //!<number of outcoming messages
     uint16_t getErrCnt();                        //!<error counter
