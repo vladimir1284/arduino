@@ -16,7 +16,7 @@ enum error_codes
 
 enum coil_addresses
 {
-    ADR_PUMP,
+    ADR_ERROR_ACK,
 };
 
 enum reg_addresses

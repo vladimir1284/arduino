@@ -18,7 +18,7 @@ int MemoryHandler::getCoilValue(int address)
 {
     switch (address)
     {
-    case ADR_PUMP:
+    case ADR_ERROR_ACK:
         // TODO return real value
         return OK_ACTION;
         break;
@@ -41,8 +41,10 @@ int MemoryHandler::setCoilValue(int address, bool value)
 {
     switch (address)
     {
-    case ADR_PUMP:
-        // TODO return real value
+    case ADR_ERROR_ACK:
+        if (value){
+            pumpCtrl->errorAck();
+        }
         return OK_ACTION;
         break;
 
