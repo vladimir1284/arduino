@@ -1,23 +1,33 @@
 #ifndef config_h
 #define config_h
 
+#include <EEPROM.h>
+
 // ---------- Controller ------------
 // Pinout
 // Ultrasonic sensors configs
 #define triggerPIN PB15
-#define N_SENSORS  2
+#define N_SENSORS 2
 // Pump pins
-#define pumpPIN         PC13
-#define capacitorPIN    PB9
+#define pumpPIN PC13
+#define capacitorPIN PB9
+// Light pins
+#define pirPIN PB12
+#define ldrPIN PB13
+#define LightPIN0 PA0
 
 // Tanks
-#define UPPERTANK  0
-#define LOWERTANK  1
+#define UPPERTANK 0
+#define LOWERTANK 1
+
+// Maximum height for a tank
+#define MAX_HEIGHT 300 // cm
+// Minimum gap for a tank
+#define MIN_GAP 15 // cm
 
 // Control
-#define START_CAP_DELAY 3000 // ms
-#define PUMP_ON_DELAY   5*60*1000 // ms (5min)
-#define FULL_TANK 90
+#define START_CAP_FACTOR 1000 // seg
+#define PUMP_ON_FACTOR 60000  // min
 
 // ----------- Modbus ---------------
 #define MB_SPEED 19200
@@ -31,20 +41,45 @@
 // in which case, set this #define pin to 0!
 #define TFT_DC PA3
 
-#define b2    64
-#define b1    b2 / 2
-#define h1    50
-#define c1    b1 / 2
-#define h2    40
-#define d     8
-#define p1x   2
-#define p1y   160-100
-#define p2x   2
-#define p2y   160-2
-#define p3x   48
-#define p3y   160-81
-#define din   16
-#define dout  32
-#define h0    160-8
+// ----------- ADDRESSES ------------------
+
+enum addresses
+{
+    //  ----------- Configs-----------
+    // Pump Controller 0
+    ADR_UT_HEIGTH,
+    ADR_UT_GAP,
+    ADR_UT_MIN,
+    ADR_UT_RESTART,
+    ADR_LT_HEIGTH,
+    ADR_LT_GAP,
+    ADR_LT_MIN,
+    ADR_LT_RESTART,
+    ADR_PUMP_START_CAP,
+    ADR_PUMP_ON,
+    ADR_FULL_TANK,
+    // Light 0
+    ADR_LIGHT_MODE_0,
+    ADR_LIGHT_SLEEP_TIME_0,
+    ADR_LIGHT_SMART_0,
+    ADR_LIGHT_SMART_DELAY_0,
+    ADR_LIGHT_INIT_DELAY_0,
+    ADR_LIGHT_DELAY_INCREMENT_0,
+    ADR_LIGHT_TRESHOLD_0,
+    //  ----------- Vaiables-----------
+    // Pump Controller 0
+    ADR_UT_LEVEL,
+    ADR_LT_LEVEL,
+    ADR_PC_STATE,
+    ADR_ERROR_ACK,
+    // Light 0
+    ADR_LUMINOSITY_0,
+    ADR_PIR_STATE_0,
+    ADR_LIGHT_STATE_0,
+};
+
+// EEPROM utility functions
+int saveInt(int address, int value);
+int loadInt(int address);
 
 #endif // !config_h

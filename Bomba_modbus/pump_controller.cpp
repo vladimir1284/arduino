@@ -37,8 +37,7 @@ void PumpController::run()
     switch (currenState)
     {
     case PUMP_IDLE:
-        if (getUpperTankLevel() < upperTank.getRestart()
-            && getLowerTankLevel() > lowerTank.getMin())
+        if (getUpperTankLevel() < upperTank.getRestart() && getLowerTankLevel() > lowerTank.getMin())
         {
             startPump();
             currenState = PUMP_ON;
@@ -46,18 +45,21 @@ void PumpController::run()
         break;
 
     case PUMP_ON:
-        if (getUpperTankLevel() > FULL_TANK){
+        if (getUpperTankLevel() > fullTank)
+        {
             pumpStop();
             currenState = PUMP_IDLE;
         }
-        if (getLowerTankLevel() < lowerTank.getMin()){
+        if (getLowerTankLevel() < lowerTank.getMin())
+        {
             pumpStop();
             currenState = PUMP_WAIT;
         }
         break;
 
     case PUMP_WAIT:
-        if (getLowerTankLevel() > lowerTank.getRestart()){
+        if (getLowerTankLevel() > lowerTank.getRestart())
+        {
             startPump();
             currenState = PUMP_ON;
         }
@@ -90,9 +92,9 @@ void PumpController::vPumpStartTask(void *pvParameters)
 
     TickType_t xLastWakeTime;
     // Time needed for desconecting the start capacitor
-    int xTicksStartDelay = pdMS_TO_TICKS(START_CAP_DELAY);
+    int xTicksStartDelay = pdMS_TO_TICKS(START_CAP_FACTOR * pumpCtrl->getStartDelay());
     // Time needed for desconecting the start capacitor
-    int xTicksPumpOnDelay = pdMS_TO_TICKS(PUMP_ON_DELAY);
+    int xTicksPumpOnDelay = pdMS_TO_TICKS(PUMP_ON_FACTOR * pumpCtrl->getOnDelay());
 
     xLastWakeTime = xTaskGetTickCount();
 
@@ -168,6 +170,69 @@ int PumpController::getTankLevel(int tank)
 }
 
 //----------------------------------------------------------------------------------
+int PumpController::setOnDelay(int newValue)
+{
+    if (newValue >= MIN_ON && newValue <= MAX_ON)
+    {
+        onDelay = newValue;
+        saveInt(ADR_PUMP_ON, newValue);
+        return 0;
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+//----------------------------------------------------------------------------------
+int PumpController::setStartDelay(int newValue)
+{
+    if (newValue >= MIN_DELAY && newValue <= MAX_DELAY)
+    {
+        startDelay = newValue;
+        saveInt(ADR_PUMP_START_CAP, newValue);
+        return 0;
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+//----------------------------------------------------------------------------------
+int PumpController::setFullTank(int newValue)
+{
+    if (newValue >= MIN_FULL && newValue <= MAX_FULL)
+    {
+        fullTank = newValue;
+        saveInt(ADR_FULL_TANK, newValue);
+        return 0;
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+//----------------------------------------------------------------------------------
+int PumpController::getOnDelay()
+{
+    return onDelay;
+}
+
+//----------------------------------------------------------------------------------
+int PumpController::getStartDelay()
+{
+    return startDelay;
+}
+
+//----------------------------------------------------------------------------------
+int PumpController::getFullTank()
+{
+    return fullTank;
+}
+
+//----------------------------------------------------------------------------------
 void PumpController::init()
 {
     currenState = PUMP_IDLE;
@@ -179,8 +244,26 @@ void PumpController::init()
 
     setupUltrasonicSensors(triggerPIN, N_SENSORS, ECHO_PINS);
 
-    lowerTank.init(BASE_ADR_LOWER_TANK);
-    upperTank.init(BASE_ADR_UPPER_TANK);
+    lowerTank.init(ADR_LT_HEIGTH, ADR_LT_GAP, ADR_LT_RESTART, ADR_LT_MIN);
+    upperTank.init(ADR_UT_HEIGTH, ADR_UT_GAP, ADR_UT_RESTART, ADR_UT_MIN);
     tanks[UPPERTANK] = upperTank;
     tanks[LOWERTANK] = lowerTank;
+
+    onDelay = loadInt(ADR_PUMP_ON);
+    startDelay = loadInt(ADR_PUMP_START_CAP);
+    fullTank = loadInt(ADR_FULL_TANK);
+
+    // Verify and Auto-correct
+    if (onDelay < MIN_ON || onDelay > MAX_ON)
+    {
+        setOnDelay(MAX_ON);
+    }
+    if (startDelay < MIN_DELAY || startDelay > MAX_DELAY)
+    {
+        setStartDelay(MAX_DELAY);
+    }
+    if (fullTank < MIN_FULL || fullTank > MAX_FULL)
+    {
+        setFullTank(MAX_FULL - 10);
+    }
 }

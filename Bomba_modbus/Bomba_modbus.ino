@@ -12,6 +12,7 @@
 #include "ModbusRtu.h"
 #include "MB_memory_handler.h"
 #include "configs.h"
+#include "LightController.h"
 
 // Option 1 (recommended): must use the hardware SPI pins
 // TFT_SCLK PA5   // SPI 1
@@ -20,7 +21,8 @@
 // to use the microSD card (see the image drawing example)
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
-//bool LOCK_SCREEN = false;
+// Lights
+LightController lamp = LightController();
 
 PumpController pump = PumpController();
 
@@ -29,10 +31,6 @@ PumpHMI hmi = PumpHMI(&tft);
 #define TXEN PB12
 Modbus slave(1, 3, TXEN); // this is slave @1 and RS-485
 MemoryHandler MBmemoryHandler = MemoryHandler(&pump);
-
-// // data array for modbus network sharing
-// uint16_t au16data[16] = {
-//     3, 1415, 9265, 4, 2, 7182, 28182, 8, 0, 0, 0, 0, 0, 0, 1, -1};
 
 // // For simulation
 // int levelUp;
@@ -47,6 +45,17 @@ static void vPumpControlTask(void *pvParameters)
   for (;;)
   {
     pump.run();
+    vTaskDelay(xTicks100ms);
+  }
+}
+
+static void vLightControlTask(void *pvParameters)
+{
+  // Execute task every 100ms
+  int xTicks100ms = pdMS_TO_TICKS(100);
+  for (;;)
+  {
+    lamp.run();
     vTaskDelay(xTicks100ms);
   }
 }
@@ -74,6 +83,11 @@ static void vUpdateScreenTask(void *pvParameters)
 void setup(void)
 {
   // ---------------- Initial setup --------------------------------
+  // EEPROM Memory
+  EEPROM.PageBase0 = 0x801F000;
+  EEPROM.PageBase1 = 0x801F800;
+  EEPROM.PageSize = 0x400;
+
   // Modbus RTU config
   slave.begin(MB_SPEED); // baud-rate at 19200
 
@@ -91,12 +105,24 @@ void setup(void)
   // Setup Pump Controller configurations
   pump.init();
 
+  // Setup Lights
+  lamp.init(LightPIN0, pirPIN, ldrPIN, ADR_LIGHT_MODE_0, ADR_LIGHT_SLEEP_TIME_0,
+            ADR_LIGHT_SMART_0, ADR_LIGHT_SMART_DELAY_0, ADR_LIGHT_INIT_DELAY_0,
+            ADR_LIGHT_DELAY_INCREMENT_0, ADR_LIGHT_TRESHOLD_0);
+
   // Setup HMI configurations
   hmi.drawHMItemplate(pump.getLowerTankMin(), pump.getUpperTankMin());
 
   // ----------------------- Register Tasks ---------------------------
   xTaskCreate(vPumpControlTask,
               "TaskPumpControl",
+              configMINIMAL_STACK_SIZE,
+              NULL,
+              tskIDLE_PRIORITY,
+              NULL);
+
+  xTaskCreate(vLightControlTask,
+              "TaskLightControl",
               configMINIMAL_STACK_SIZE,
               NULL,
               tskIDLE_PRIORITY,
@@ -121,25 +147,7 @@ void setup(void)
 
 void loop()
 {
-  // // int level, count = 0;
 
-  // if ((millis() - lastPrint) > 1000)
-  // {
-  //   //simulate();
-  //   //hmi.animate();
-  //   if (!LOCK_SCREEN)
-  //   {
-  //     hmi.updateLowerTankLevel(pump.getLowerTankLevel());
-  //     hmi.updateUpperTankLevel(pump.getUpperTankLevel());
-  //   }
-  //   // // Print the distance
-  //   // tft.setCursor(70, 40);
-  //   // char tbs[6];
-  //   // sprintf(tbs, "%3dmm", pump.getUpperTankLevel());
-  //   // tft.println(tbs);
-  //   lastPrint = millis();
-  // }
-  // pump.run();
 }
 
 // void simulate()

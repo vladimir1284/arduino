@@ -7,25 +7,16 @@ TankParameters::TankParameters()
 {
 }
 
-void TankParameters::init(int baseAdr){
-  uint16 h, g, m, r;
-
-  // Configure Memory
-  EEPROM.PageBase0 = 0x801F000;
-  EEPROM.PageBase1 = 0x801F800;
-  EEPROM.PageSize = 0x400;
-
-  // Read from EEPROM
-  baseAddress = baseAdr;
-  EEPROM.read(EEPROM.PageBase0 + baseAddress, &h);
-  EEPROM.read(EEPROM.PageBase0 + baseAddress + 4, &g);
-  EEPROM.read(EEPROM.PageBase0 + baseAddress + 8, &m);
-  EEPROM.read(EEPROM.PageBase0 + baseAddress + 12, &r);
-
-  height = h;
-  gap = g;
-  min = m;
-  restart = r;
+void TankParameters::init(int addrHeight, int addrGap, int addrRestart, int addrMin)
+{
+  addr_height = addrHeight;
+  addr_gap = addrGap;
+  addr_restart = addrRestart;
+  addr_min = addrMin;
+  height = loadInt(addr_height);
+  gap = loadInt(addr_gap);
+  min = loadInt(addr_restart);
+  restart = loadInt(addr_min);
 
   // Verify and Auto-correct
   if (height < MIN_GAP || height > MAX_HEIGHT)
@@ -52,7 +43,7 @@ int TankParameters::setHeight(int newValue)
   if (newValue > MIN_GAP && newValue < MAX_HEIGHT)
   {
     height = newValue;
-    EEPROM.write(EEPROM.PageBase0 + baseAddress, (uint16)height);
+    saveInt(addr_height, newValue);
     return 0;
   }
   else
@@ -68,7 +59,7 @@ int TankParameters::setGap(int newValue)
       newValue < height)
   {
     gap = newValue;
-    EEPROM.write(EEPROM.PageBase0 + baseAddress + 4, (uint16)gap);
+    saveInt(addr_gap, newValue);
     return 0;
   }
   else
@@ -83,7 +74,7 @@ int TankParameters::setRestart(int newValue)
   if (newValue > 0 && newValue < 100)
   {
     restart = newValue;
-    EEPROM.write(EEPROM.PageBase0 + baseAddress + 12, (uint16)restart);
+    saveInt(addr_restart, newValue);
     return 0;
   }
   else
@@ -98,7 +89,7 @@ int TankParameters::setMin(int newValue)
   if (newValue > 0 && newValue < 100)
   {
     min = newValue;
-    EEPROM.write(EEPROM.PageBase0 + baseAddress + 8, (uint16)min);
+    saveInt(addr_min, newValue);
     return 0;
   }
   else
@@ -110,27 +101,23 @@ int TankParameters::setMin(int newValue)
 //----------------------------------------------------------------------------------
 int TankParameters::getHeight()
 {
-  //EEPROM.read(EEPROM.PageBase0+baseAddress, &height);
   return height;
 }
 
 //----------------------------------------------------------------------------------
 int TankParameters::getGap()
 {
-  //EEPROM.read(EEPROM.PageBase0+baseAddress+4, &gap);
   return gap;
 }
 
 //----------------------------------------------------------------------------------
 int TankParameters::getMin()
 {
-  //EEPROM.read(EEPROM.PageBase0+baseAddress+8, &min);
   return min;
 }
 
 //----------------------------------------------------------------------------------
 int TankParameters::getRestart()
 {
-  //EEPROM.read(EEPROM.PageBase0+baseAddress+12, &restart);
   return restart;
 }
