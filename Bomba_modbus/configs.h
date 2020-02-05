@@ -9,12 +9,12 @@
 #define triggerPIN PB15
 #define N_SENSORS 2
 // Pump pins
-#define pumpPIN PC13
+#define pumpPIN PB8
 #define capacitorPIN PB9
 // Light pins
-#define pirPIN PB12
-#define ldrPIN PB13
-#define LightPIN0 PA0
+#define pirPIN PB5
+#define ldrPIN PA1
+#define LightPIN0 PB7
 
 // Tanks
 #define UPPERTANK 0
