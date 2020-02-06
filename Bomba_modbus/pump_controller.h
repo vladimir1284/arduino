@@ -54,7 +54,9 @@ public:
         getUpperTankMin(),
         getOnDelay(),
         getStartDelay(),
-        getFullTank();
+        getFullTank(),
+        getPumpState();
+
     TankParameters *getLowerTank(),
         *getUpperTank();
 
@@ -63,7 +65,8 @@ public:
     // Setters
     int setOnDelay(int newValue),
         setStartDelay(int newValue),
-        setFullTank(int newValue);
+        setFullTank(int newValue),
+        setPumpState(int newSate);
 
 private:
     TankParameters upperTank,
