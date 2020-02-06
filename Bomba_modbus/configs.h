@@ -12,7 +12,7 @@
 #define pumpPIN PB8
 #define capacitorPIN PB9
 // Light pins
-#define pirPIN PB5
+#define pirPIN PB4
 #define ldrPIN PA1
 #define LightPIN0 PB7
 
@@ -71,7 +71,7 @@ enum addresses
     ADR_UT_LEVEL,
     ADR_LT_LEVEL,
     ADR_PC_STATE,
-    ADR_ERROR_ACK,
+    ADR_ERROR_ACK, // Coil
     // Light 0
     ADR_LUMINOSITY_0,
     ADR_PIR_STATE_0,

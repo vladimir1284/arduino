@@ -215,22 +215,29 @@ int PumpController::setFullTank(int newValue)
 }
 
 //----------------------------------------------------------------------------------
-int PumpController::getOnDelay()
+int PumpController::setPumpState(int newState)
 {
-    return onDelay;
+    if (newState == PUMP_ON)
+    {
+        currenState = PUMP_ON;
+    }
+    else
+    {
+        return -1;
+    }
 }
 
 //----------------------------------------------------------------------------------
-int PumpController::getStartDelay()
-{
-    return startDelay;
-}
+int PumpController::getOnDelay() { return onDelay; }
 
 //----------------------------------------------------------------------------------
-int PumpController::getFullTank()
-{
-    return fullTank;
-}
+int PumpController::getStartDelay() { return startDelay; }
+
+//----------------------------------------------------------------------------------
+int PumpController::getFullTank() { return fullTank; }
+
+//----------------------------------------------------------------------------------
+int PumpController::getPumpState() { return currenState; }
 
 //----------------------------------------------------------------------------------
 void PumpController::init()

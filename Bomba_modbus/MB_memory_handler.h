@@ -3,9 +3,10 @@
 
 #include "TankParameters.h"
 #include "pump_controller.h"
+#include "LightController.h"
 #include "configs.h"
 
-#define REGISTER_SIZE 16 // Depends on reg_addresses
+#define REGISTER_SIZE 64 // Depends on reg_addresses
 
 enum error_codes
 {
@@ -19,7 +20,8 @@ class MemoryHandler
 {
 
 public:
-    MemoryHandler(PumpController *pumpController);
+    MemoryHandler(PumpController *pumpController,
+                  LightController *lamp0);
 
     int getCoilValue(int address);
     int getRegValue(int address);
@@ -28,5 +30,6 @@ public:
 
 private:
     PumpController *pumpCtrl;
+    LightController *light0;
 };
 #endif // memory_handler_h

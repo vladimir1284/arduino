@@ -30,7 +30,7 @@ PumpHMI hmi = PumpHMI(&tft);
 
 #define TXEN PB12
 Modbus slave(1, 3, TXEN); // this is slave @1 and RS-485
-MemoryHandler MBmemoryHandler = MemoryHandler(&pump);
+MemoryHandler MBmemoryHandler = MemoryHandler(&pump, &lamp);
 
 // // For simulation
 // int levelUp;

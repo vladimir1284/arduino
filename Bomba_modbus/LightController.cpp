@@ -31,7 +31,7 @@ void LightController::init(int relayPin, int pirPin,
     pir_pin = pirPin;
     pir_on = HIGH;
     luminosity_pin = luminosityPin;
-    luminosity_monotony = 1;
+    luminosity_monotony = -1;
     //
     config(relayPin, addrMode, addrSleepTime, addrSmart, addrSmartDelay,
            addrInitDelay, addrDelayIncrement, addrThreshold);
@@ -80,6 +80,10 @@ void LightController::config(int relayPin, int addrMode, int addrSleepTime, int 
     {
         setInitDelay(MIN_INIT_DELAY);
     }
+    if (delayIncrement < MIN_DELAY_INCREMENT || delayIncrement > MAX_DELAY_INCREMENT)
+    {
+        setDelayIncrement(MIN_DELAY_INCREMENT);
+    }
     if (luminosityThreshold < MIN_THRESHOLD || luminosityThreshold > MAX_THRESHOLD)
     {
         setThreshold(50);
@@ -115,14 +119,14 @@ bool LightController::thresholdSatisfied()
 {
     if (lastSatisfied)
     {
-        if (luminosity < (luminosityThreshold - THRESHOLD_HYST))
+        if (luminosity > (luminosityThreshold + THRESHOLD_HYST))
         {
             lastSatisfied = false;
         }
     }
     else
     {
-        if (luminosity > (luminosityThreshold + THRESHOLD_HYST))
+        if (luminosity < (luminosityThreshold - THRESHOLD_HYST))
         {
             lastSatisfied = true;
         }
