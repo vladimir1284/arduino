@@ -41,6 +41,7 @@ void setup()
   // Clear the buffer
   display.clearDisplay();
   display.setTextColor(WHITE, BLACK);
+  display.setRotation(2);
 
   count = 0;
   head = 0;
