@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "stutil",
+            "cwd": "${workspaceRoot}",
+            "executable": "./build/moskvich.ino.elf",
+            "name": "Debug (ST-Util)",
+            "device": "STM32F103RB",
+            "v1": false
+        }
+    ]
+}
