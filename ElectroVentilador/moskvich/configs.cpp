@@ -114,11 +114,11 @@ void Configs::printLargeVoltValue()
   // Clean
   _tft->set_cursor(48, 48);
   _tft->select_font(font8x8);
-  _tft->print("   ");
+  _tft->print("    ");
 
   // Print
-  _tft->set_cursor(0, 48);
-  _tft->print((float)value / 10, 1);
+  _tft->set_cursor(48, 48);
+  _tft->print((float)value / 10.0, 1);
 }
 //--------------------------------------------------------------------
 void Configs::printLargeValue()
@@ -150,7 +150,7 @@ void Configs::drawMenu(const char text[][STRING_LENGTH], int nItems)
 void Configs::printVoltValue(int val)
 {
   _tft->print(' ');
-  _tft->print((float)val / 10);
+  _tft->print((float)val / 10.0);
   _tft->println('V');
 }
 

@@ -14,19 +14,25 @@ void ElectroController::run()
 {
     readTemperature();
     readVoltage();
-    overPressure = signalB.isActive();
-    acStatus = signalA.isActive();
+    reverse = false;
+    acStatus = false;
+    reverse = signalB.isActive();
+    // acStatus = signalA.isActive();
     run(temperature);
 }
 
 //--------------------------------------------------------------------
 void ElectroController::handleOverVoltage()
 {
-    if ((voltage <= VOLT_MAX) && (state != ALARM))
+    if ((voltage <= VOLT_MAX) && (state != ALARM) && !reverse)
     {
         turnOffBuzzer();
     }
     if ((voltage > VOLT_ALARM) && !buzzerState)
+    {
+        turnOnBuzzer();
+    }
+    if (reverse && !buzzerState)
     {
         turnOnBuzzer();
     }
@@ -85,12 +91,12 @@ void ElectroController::simulate()
 
         case AP:
             simCount++;
-            overPressure = true;
+            reverse = true;
             if (simCount > SIM_COUNT)
             {
                 simulationState = TEMP_UP;
                 simCount = 0;
-                overPressure = false;
+                reverse = false;
             }
             break;
 
@@ -154,8 +160,7 @@ void ElectroController::run(int temp)
 
         // Next state
         if (temp >= temp1 ||
-            acStatus ||
-            overPressure)
+            acStatus)
         {
             state = SPEED0;
         }
@@ -167,13 +172,11 @@ void ElectroController::run(int temp)
         trunOnSpeed0();
         // Next state
         if ((temp <= (temp1 - hysteresis)) &&
-            !acStatus &&
-            !overPressure)
+            !acStatus)
         {
             state = IDLE;
         }
-        if (temp >= (temp1 + hysteresis) ||
-            overPressure)
+        if (temp >= (temp1 + hysteresis))
         {
             state = SPEED1;
         }
@@ -184,8 +187,7 @@ void ElectroController::run(int temp)
         trunOnSpeed1();
 
         // Next state
-        if (temp <= temp1 &&
-            !overPressure)
+        if (temp <= temp1)
         {
             state = SPEED0;
         }
@@ -303,8 +305,9 @@ void ElectroController::readTemperature()
 
         // Compute temperature
         float Temp;
-        Temp = log(((40960000 / val) - 10000));
-        Temp = 1 / (0.001129148 + (0.000234125 + (0.0000000876741 * Temp * Temp)) * Temp);
+        //Temp = log(((40960000 / val) - 10000));
+        Temp = log(6750 * ((4096.0 / (float)val) - 1.0));
+        Temp = 1.0 / (0.001129148 + (0.000234125 + (0.0000000876741 * Temp * Temp)) * Temp);
         Temp = Temp - 273.15; // Converierte de Kelvin a Celsius
         TempFilter.insertValue(Temp + calibration);
         temperature = TempFilter.getValue();
@@ -425,9 +428,9 @@ bool ElectroController::getOverTemperature()
 }
 
 //--------------------------------------------------------------------
-bool ElectroController::getOverPressure()
+bool ElectroController::getreverse()
 {
-    return overPressure;
+    return reverse;
 }
 
 //--------------------------------------------------------------------

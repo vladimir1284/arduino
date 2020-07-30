@@ -37,15 +37,15 @@ void ThermHMI::showConfigs()
 void ThermHMI::drawBateryIcon(int color)
 {
   // body
-  _tft->draw_rect(Xbat, Ybat, Wbat, Hbat, Rbat, color);
+  _tft->draw_rect(Xbat, Ybat, Wbat, Hbat, WHITE, color);
   // Connectors
-  _tft->draw_rect(Xbat + 4, Ybat - 5, 6, 6, 1, color);
-  _tft->draw_rect(Xbat + 15, Ybat - 5, 6, 6, 1, color);
-  _tft->draw_rect(Xbat + 4, Ybat - 2, 21, 2, BLACK);
+  _tft->draw_rect(Xbat + 4, Ybat - 5, 6, 6, WHITE, color);
+  _tft->draw_rect(Xbat + 15, Ybat - 5, 6, 6, WHITE, color);
+  _tft->draw_rect(Xbat + 4, Ybat - 2, 21, 2, BLACK, BLACK);
   // Polarity
-  _tft->draw_rect(Xbat + 4, 1.5 * Ybat + 2, 6, 2, BLACK);
-  _tft->draw_rect(Xbat + 15, 1.5 * Ybat + 2, 6, 2, BLACK);
-  _tft->draw_rect(Xbat + 17, 1.5 * Ybat, 2, 6, BLACK);
+  _tft->draw_rect(Xbat + 4, 1.5 * Ybat + 2, 6, 2, !color);
+  _tft->draw_rect(Xbat + 15, 1.5 * Ybat + 2, 6, 2, !color);
+  _tft->draw_rect(Xbat + 17, 1.5 * Ybat, 2, 6, !color);
 }
 
 //--------------------------------------------------------------------
@@ -54,15 +54,7 @@ void ThermHMI::updateVoltage(float voltage)
   int color;
 
   // Draw batery icon and get the color
-  if (voltage < VOLT_MIN)
-  {
-    if (abs(voltage - lastVoltage) > 0.1)
-    {
-      drawBateryIcon(WHITE);
-      color = WHITE;
-    }
-  }
-  else if (voltage > VOLT_MAX)
+  if (voltage < VOLT_MIN || voltage > VOLT_MAX)
   {
     blinkBatery();
     color = WHITE;
@@ -100,7 +92,7 @@ void ThermHMI::drawHMItemplate()
   _tft->clear_screen();
   drawIcon();
   updateVoltage(0); // Forcing drawing with a different value
-  drawFan();
+  //drawFan();
   showConfigs();
   acON = false;
   overPressureON = false;
@@ -113,7 +105,7 @@ void ThermHMI::drawHMItemplate()
 void ThermHMI::drawFan()
 {
   _tft->draw_rect(Xfan, Yfan, 48, 48, BLACK);
-  _tft->bitmap(Xfan, Yfan, fan0, Wfan, Hfan);
+  _tft->bitmap(Xfan, Yfan, fan0, 0, Wfan, Hfan);
 }
 
 //--------------------------------------------------------------------
@@ -152,12 +144,12 @@ void ThermHMI::animateFan(int speed)
     if (fan == 0)
     {
       fan = 1;
-      _tft->bitmap(Xfan, Yfan, fan0, Wfan, Hfan, indicator_color);
+      _tft->bitmap(Xfan, Yfan, fan0, 0, Wfan, Hfan);
     }
     else
     {
       fan = 0;
-      _tft->bitmap(Xfan, Yfan, fan1, Wfan, Hfan, indicator_color);
+      _tft->bitmap(Xfan, Yfan, fan1, 0, Wfan, Hfan);
     }
     lastTimeFanChanged = millis();
   }
@@ -211,7 +203,7 @@ void ThermHMI::update()
         {
           indicator_color = color;
           drawIcon();
-          drawFan();
+          //drawFan();
         }
         if (tempValue != current_value)
         {
@@ -224,12 +216,12 @@ void ThermHMI::update()
 
       if (fanSpeed != FAN_STOP)
       {
-        animateFan(fanSpeed);
+        //animateFan(fanSpeed);
       }
       else if (lastFanSpeed != FAN_STOP)
       {
         // Update the fan to a static image after stop
-        drawFan();
+        //drawFan();
       }
     }
     else
@@ -347,7 +339,7 @@ void ThermHMI::showError(int error_code)
 //--------------------------------------------------------------------
 void ThermHMI::updateTemp(int value)
 {
-  int xShift = 64;
+  int xShift = 56;
 
   drawBar(value);
   current_value = value;
@@ -366,9 +358,9 @@ void ThermHMI::updateTemp(int value)
       pendingClear = false;
     }
   }
-  //_tft->drawChar()
-  _tft->select_font(font8x8);
-  _tft->set_cursor(Xicon - xShift, Yicon - 16);
+  
+  _tft->select_font(Arial_round_16x24);
+  _tft->set_cursor(Xicon - xShift, Yicon - 12);
   _tft->print(value);
 }
 
@@ -391,7 +383,7 @@ void ThermHMI::drawBar(int temp)
     }
     for (k = regPtrs[i]; k < regPtrs[i + 1]; k++)
     {
-      _tft->set_pixel(Xcoords[k], Ycoords[k], color);
+      _tft->set_pixel(Xcoords[k]+30, Ycoords[k]-20, color);
     }
   }
 }
@@ -427,7 +419,8 @@ void ThermHMI::drawIcon()
   _tft->draw_rect(Xicon + 2.5 * Wwaves, Yicon + SPACEwaves + 1, Hwaves, Hwaves, indicator_color);
   // ----- Celcius Degrees -------------
   _tft->select_font(font6x8);
+  _tft->set_cursor(Xicon - 22, Yicon - 17);
+  _tft->print('o');
   _tft->set_cursor(Xicon - 16, Yicon - 13);
-  //_tft->print((char)247);
   _tft->println('C');
 }

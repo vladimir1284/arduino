@@ -3,6 +3,7 @@
 #include "configs.h"
 #include "bar_points.h"
 #include "controller.h"
+#include "Arial_round_16x24.h"
 
 #define ORANGE_COLOR  ST7735_YELLOW
 

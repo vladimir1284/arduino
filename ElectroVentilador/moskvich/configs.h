@@ -39,12 +39,12 @@
 #define PIN_NTC     PA0
 #define PIN_VOLT    PA2
 #define PIN_BUZ     PB15
-#define PIN_BUZ_ACT PB5
+#define PIN_BUZ_ACT PB6
 #define PIN_FAN0    PA9
 #define PIN_FAN1    PA8
 #define BTN_PIN     PA10
 #define PIN_A       PA15
-#define PIN_B       PB4
+#define PIN_B       PB5
 
 // Signals controling directly the fan
 #define WAIT2ACTIVATE 250 // ms
@@ -124,7 +124,7 @@ PROGMEM const char mainText[MAIN_ITEMS][STRING_LENGTH] = {" Temperatura",
 
 // ---------- HMI --------------
 // Thermometer icon
-#define Xicon 130
+#define Xicon 150
 #define Yicon 98
 #define Rtherm 3
 #define Htherm 12
@@ -146,8 +146,8 @@ PROGMEM const char mainText[MAIN_ITEMS][STRING_LENGTH] = {" Temperatura",
 #define BatBlinkDelay 500
 
 // Configs
-#define Xcfg1 5
-#define Ycfg1 70
+#define Xcfg1 35
+#define Ycfg1 60
 #define DxCfg1 11
 #define DyCfg1 15
 

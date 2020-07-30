@@ -50,7 +50,7 @@ public:
 
     bool getOverTemperature(),
         getACstatus(),
-        getOverPressure();
+        getreverse();
 
     float getTemperature(),
         getVoltage();
@@ -83,7 +83,7 @@ private:
         signalB;
 
     bool buzzerState,
-        overPressure,
+        reverse,
         acStatus,
         sound;
 
