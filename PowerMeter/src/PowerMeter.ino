@@ -5,6 +5,55 @@ Things to know:
  further details: STM32_README.txt
 */
 
+#define CALIBRATE false
+
+#define LIBMAPPLE_CORE //comment it for HAL based core
+
+#define IWDG_PR_DIV_4 0x0
+#define IWDG_PR_DIV_8 0x1
+#define IWDG_PR_DIV_16 0x2
+#define IWDG_PR_DIV_32 0x3
+#define IWDG_PR_DIV_64 0x4
+#define IWDG_PR_DIV_128 0x5
+#define IWDG_PR_DIV_256 0x6
+
+typedef enum iwdg_prescaler
+{
+  IWDG_PRE_4 = IWDG_PR_DIV_4,     /**< Divide by 4 */
+  IWDG_PRE_8 = IWDG_PR_DIV_8,     /**< Divide by 8 */
+  IWDG_PRE_16 = IWDG_PR_DIV_16,   /**< Divide by 16 */
+  IWDG_PRE_32 = IWDG_PR_DIV_32,   /**< Divide by 32 */
+  IWDG_PRE_64 = IWDG_PR_DIV_64,   /**< Divide by 64 */
+  IWDG_PRE_128 = IWDG_PR_DIV_128, /**< Divide by 128 */
+  IWDG_PRE_256 = IWDG_PR_DIV_256  /**< Divide by 256 */
+} iwdg_prescaler;
+
+#if defined(LIBMAPPLE_CORE)
+typedef struct iwdg_reg_map
+{
+  volatile uint32_t KR;  /**< Key register. */
+  volatile uint32_t PR;  /**< Prescaler register. */
+  volatile uint32_t RLR; /**< Reload register. */
+  volatile uint32_t SR;  /**< Status register */
+} iwdg_reg_map;
+
+#define IWDG ((struct iwdg_reg_map *)0x40003000)
+#endif
+
+void iwdg_feed(void)
+{
+  IWDG->KR = 0xAAAA;
+}
+
+void iwdg_init(iwdg_prescaler prescaler, uint16_t reload)
+{
+  IWDG->KR = 0x5555;
+  IWDG->PR = prescaler;
+  IWDG->RLR = reload;
+  IWDG->KR = 0xCCCC;
+  IWDG->KR = 0xAAAA;
+}
+
 #include "TrueRMS.h"
 #include <SPI.h>
 #include <Wire.h>
@@ -31,11 +80,11 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define NSAMPLES 128
 #define NAVERAGE 50
 
-#define VRange 1720
+#define VRange 430.71    // 1720
 #define voltage_pin PA1 // us
 #define MINVOLTAGE 80   // Thresshold for detecting power off
 
-#define IRange 30.2
+#define IRange 51.55
 #define current_pin PA0 // us
 
 #define EFACTOR 2.778e-10
@@ -205,56 +254,71 @@ void readSamples()
 // Updates data in oled screen
 void updateScreen(float v, float i, int p, float fp)
 {
-  char tbs[5];
-  char energyStr[12];
-  char timeStr[9];
-
   display.clearDisplay();
 
-  // First line
-  display.setCursor(0, 0);
-  display.print(v, 0);
-  display.print("V");
-
-  display.setCursor(64, 0);
-  display.print(floor(i * 10) / 10, 1);
-  display.print("A");
-
-  // Second line
-  display.setCursor(0, 24);
-
-  if (showTimeOn)
+  if (CALIBRATE)
   {
-    getTimeStr(timeStr);
-    display.print(timeStr);
+    // First line
+    display.setCursor(0, 0);
+    display.print(v, 1);
+    display.print("V");
+    // Second line
+    display.setCursor(0, 24);
+    display.print(i, 2);
+    display.print("A");
   }
   else
   {
-    display.print(p);
-    display.print("w ");
+    char tbs[5];
+    char energyStr[12];
+    char timeStr[9];
 
-    display.setCursor(64, 24);
-    sprintf(tbs, "fp.%02d", (int)abs(100 * fp));
-    display.print(tbs);
-  }
+    // First line
+    display.setCursor(0, 0);
+    display.print(v, 0);
+    display.print("V");
 
-  // Alternate screen
-  if (millis() - lastScreenAlternate > SCR_ALT_DELAY){
-    lastScreenAlternate = millis();
-    showTimeOn = !showTimeOn;
-  }
+    display.setCursor(64, 0);
+    display.print(floor(i * 10) / 10, 1);
+    display.print("A");
 
-  // Third line
-  display.setCursor(0, 48);
-  if (energy < 1)
-  {
-    sprintf(energyStr, "%06.2fWh", 1000 * energy);
+    // Second line
+    display.setCursor(0, 24);
+
+    if (showTimeOn)
+    {
+      getTimeStr(timeStr);
+      display.print(timeStr);
+    }
+    else
+    {
+      display.print(p);
+      display.print("w ");
+
+      display.setCursor(64, 24);
+      sprintf(tbs, "fp.%02d", (int)abs(100 * fp));
+      display.print(tbs);
+    }
+
+    // Alternate screen
+    if (millis() - lastScreenAlternate > SCR_ALT_DELAY)
+    {
+      lastScreenAlternate = millis();
+      showTimeOn = !showTimeOn;
+    }
+
+    // Third line
+    display.setCursor(0, 48);
+    if (energy < 1)
+    {
+      sprintf(energyStr, "%06.2fWh", 1000 * energy);
+    }
+    else
+    {
+      sprintf(energyStr, "%06.2fkWh", energy);
+    }
+    display.print(energyStr);
   }
-  else
-  {
-    sprintf(energyStr, "%06.2fkWh", energy);
-  }
-  display.print(energyStr);
 
   display.display();
 }
