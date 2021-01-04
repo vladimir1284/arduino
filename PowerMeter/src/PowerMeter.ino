@@ -5,8 +5,16 @@ Things to know:
  further details: STM32_README.txt
 */
 
-#define CALIBRATE false
+#include "TrueRMS.h"
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306_STM32.h>
+#include <EEPROM.h>
 
+#define CALIBRATE false // Set to true for calibration screen
+
+// =============== Watchdog ======================
 #define LIBMAPPLE_CORE //comment it for HAL based core
 
 #define IWDG_PR_DIV_4 0x0
@@ -53,14 +61,9 @@ void iwdg_init(iwdg_prescaler prescaler, uint16_t reload)
   IWDG->KR = 0xCCCC;
   IWDG->KR = 0xAAAA;
 }
+// ========================================================
 
-#include "TrueRMS.h"
-#include <SPI.h>
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306_STM32.h>
-#include <EEPROM.h>
-
+// =============== Convert millis() to Days:Hours:minutes ======================
 /* Useful Constants */
 #define SECS_PER_MIN (60UL)
 #define SECS_PER_HOUR (3600UL)
@@ -70,37 +73,47 @@ void iwdg_init(iwdg_prescaler prescaler, uint16_t reload)
 #define numberOfMinutes(_time_) ((_time_ / SECS_PER_MIN) % SECS_PER_MIN)
 #define numberOfHours(_time_) ((_time_ % SECS_PER_DAY) / SECS_PER_HOUR)
 #define elapsedDays(_time_) (_time_ / SECS_PER_DAY) // this is number of days since Jan 1 1970
+// ==============================================================================
 
 #define OLED_RESET -1
 Adafruit_SSD1306 display(OLED_RESET);
 
-#define SETUPTIME 5000 //ms
+// =================== Computations ==========================
+#define SAMPLE_INTERVAL 150 // us. Tieme interval between samples
+#define NSAMPLES 128        // Number of samples used for estimating electric values
+#define NAVERAGE 50         // Averaged values of the electric values
 
-#define SAMPLE_INTERVAL 150 // us
-#define NSAMPLES 128
-#define NAVERAGE 50
-
-#define VRange 430.71    // 1720
-#define voltage_pin PA1 // us
+#define VRange 430.71   // Voltage calibration constant
+#define voltage_pin PA1 // Pin for the voltage divider
 #define MINVOLTAGE 80   // Thresshold for detecting power off
 
-#define IRange 51.55
-#define current_pin PA0 // us
+#define IRange 51.55    // Current calibration constant
+#define current_pin PA0 // Pin for the ACS712 sensor
 
 #define EFACTOR 2.778e-10
 
 Power acPower;
-
 unsigned long lastEnergyMS, startup;
 int averageIter;
 float Vaverage, Iaverage, Paverage, FPaverage;
 float energy;
+// ===========================================================
 
-bool pendingSaving; // Enables power off saving 5s after power on.
-                    // It's disabled after saving and restores after 1hr.
+// =============== Auto save ======================
+/*  Enables power off saving 5s after power on.
+    It's disabled after saving and restores after 1hr.*/
+#define ADDR 2 // storage address
 
+bool pendingSaving;
+#define SETUPTIME 5000 // ms
+
+#define AUTOSAVEDELAY 3600000 // ms. 1 Hour.
+unsigned long lastSave;
+// ================================================
+
+// Alternating betwing showing time on and power.
 #define SCR_ALT_DELAY 5000
-bool showTimeOn; // Used for alternating betwing showing time on and power.
+bool showTimeOn;
 unsigned long lastScreenAlternate;
 
 void setup()
@@ -120,8 +133,8 @@ void setup()
   //EEPROM.PageBase1 = 0x801F800;
   EEPROM.PageSize = 0x400;
   // Read initial values from memory
-  EEPROM.read(EEPROM.PageBase0, &savedEnergy1);
-  EEPROM.read(EEPROM.PageBase0 + 1, &savedEnergy2);
+  EEPROM.read(EEPROM.PageBase0+ ADDR, &savedEnergy1);
+  EEPROM.read(EEPROM.PageBase0 + ADDR + 1, &savedEnergy2);
 
   energy = ((uint32)savedEnergy1 | (((uint32)savedEnergy2 << 16) & 0xFFFF0000)) / 10000.0;
 
@@ -139,11 +152,15 @@ void setup()
 
   // Prepare saving
   startup = millis();
+  lastSave = millis();
   pendingSaving = false;
 
   // Alternating screen
   lastScreenAlternate = millis();
   showTimeOn = false;
+
+  // Setup WDG
+  iwdg_init(IWDG_PRE_256, 10000); // Restart after 35.56ms if not responding
 }
 
 void loop()
@@ -151,6 +168,29 @@ void loop()
   computeAverage();
   saveIfNeeded();
   handleOverflow();
+  iwdg_feed();
+  autosave();
+}
+
+// Auto save of energy counter every hour
+void autosave()
+{
+  if ((millis() - lastSave) > AUTOSAVEDELAY)
+  {
+    lastSave = millis();
+    pendingSaving = true; // Enable the save on power off (if it was disabled by any weird reason)
+    saveEnergy();
+  }
+}
+
+void saveEnergy()
+{
+  // Save energy counter multiply by 10000 using two SHORT (16bits) values;
+  int energia = (int)(energy * 10000.0);
+  uint16 low = (uint16)(energia & 0x0000FFFF);
+  EEPROM.write(EEPROM.PageBase0 + ADDR, low);
+  uint16 high = (uint16)(energia >> 16) & 0x0000FFFF;
+  EEPROM.write(EEPROM.PageBase0 + ADDR + 1, high);
 }
 
 // Generates the power on time string
@@ -189,18 +229,13 @@ void saveIfNeeded()
   {
     if (acPower.rmsVal1 < MINVOLTAGE) // Power off detected
     {
-      // Save energy counter multiply by 10000 using two SHORT (16bits) values;
-      int energia = (int)(energy * 10000.0);
-      uint16 low = (uint16)(energia & 0x0000FFFF);
-      EEPROM.write(EEPROM.PageBase0, low);
-      uint16 high = (uint16)(energia >> 16) & 0x0000FFFF;
-      EEPROM.write(EEPROM.PageBase0 + 1, high);
+      saveEnergy();
       pendingSaving = false;
     }
   }
 }
 
-// computes average values of electric parameters
+// computes average of electric values
 void computeAverage()
 {
   int p;
@@ -256,7 +291,7 @@ void updateScreen(float v, float i, int p, float fp)
 {
   display.clearDisplay();
 
-  if (CALIBRATE)
+  if (CALIBRATE) // Calibration screen
   {
     // First line
     display.setCursor(0, 0);
@@ -267,7 +302,7 @@ void updateScreen(float v, float i, int p, float fp)
     display.print(i, 2);
     display.print("A");
   }
-  else
+  else // Running screen
   {
     char tbs[5];
     char energyStr[12];
