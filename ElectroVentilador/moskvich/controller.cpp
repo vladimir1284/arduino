@@ -304,11 +304,13 @@ void ElectroController::readTemperature()
         error_code = NO_ERROR;
 
         // Compute temperature
-        float Temp;
-        //Temp = log(((40960000 / val) - 10000));
-        Temp = log(6750 * ((4096.0 / (float)val) - 1.0));
-        Temp = 1.0 / (0.001129148 + (0.000234125 + (0.0000000876741 * Temp * Temp)) * Temp);
-        Temp = Temp - 273.15; // Converierte de Kelvin a Celsius
+        // float R = RTEMP/((4095.0 / (float)val - 1.0));
+        // float Temp = 1./(1/303.15+log(R/7470.)/2735.46)-273.15;
+
+        //float Temp = log(((40960000 / val) - 10000));
+        float Temp = log(6750 * ((4096.0 / (float)val) - 1.0));
+        Temp = 1.0 / (0.4613304466e-3 + (2.883224537e-4 + (3.748458244e-7 * Temp * Temp)) * Temp) - 273.15;
+        // Temp = Temp - 273.15; // Converierte de Kelvin a Celsius
         TempFilter.insertValue(Temp + calibration);
         temperature = TempFilter.getValue();
     }

@@ -3,5 +3,6 @@
         "*.tcc": "cpp",
         "unordered_map": "cpp",
         "cmath": "cpp"
-    }
+    },
+    "python.formatting.provider": "yapf"
 }

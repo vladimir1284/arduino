@@ -176,6 +176,8 @@ PROGMEM const char mainText[MAIN_ITEMS][STRING_LENGTH] = {" Temperatura",
 
 // Temperature refresh interval
 #define TEMP_DELAY 500 // ms
+// Resistor of the NTC divider
+#define RTEMP 6750 // ohms
 
 // ----------- Fan --------------
 #define Xfan 120
