@@ -5,26 +5,27 @@ EdgeDetector::EdgeDetector(int uPin)
 {
     pin = uPin;
     state = LOW;
-    count = 0;
+    count_f = 0;
+    count_r = 0;
 }
 
 //--------------------------------------------------------------------
 // Function for detecting a falling edge rejecting noisy readings
 bool EdgeDetector::detect_falling()
 {
-    detect_edge(LOW);
+    detect_edge(LOW, count_f);
 }
 
 //--------------------------------------------------------------------
 // Function for detecting a rising edge rejecting noisy readings
 bool EdgeDetector::detect_rising()
 {
-    detect_edge(HIGH);
+    detect_edge(HIGH, count_r);
 }
 
 //--------------------------------------------------------------------
 // Function for detecting an edge rejecting noisy readings
-bool EdgeDetector::detect_edge(bool rising)
+bool EdgeDetector::detect_edge(bool rising, int &count)
 {
     bool value = digitalRead(pin);
     if (state == !rising)

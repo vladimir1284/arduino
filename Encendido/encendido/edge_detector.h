@@ -14,11 +14,12 @@ public:
     bool detect_falling();
 
 private:
-    bool detect_edge(bool rising);
+    bool detect_edge(bool rising, int &count);
 
 protected:
     bool state;
-    int count;
+    int count_r;
+    int count_f;
     int pin;
 };
 #endif
