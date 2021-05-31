@@ -37,7 +37,7 @@ bool val;
 #define RPM_0 300
 
 // Velocidad máxima a la que puede trabajar el sistema
-#define MAXRMP 7000
+#define MAXRPM 6000
 
 // Máxima velocidad del motor (rpm) en BAJA.
 // Con velocidades mayores se asume el próximo régimen (MEDIA)
@@ -62,9 +62,15 @@ bool val;
 // Este es el menor tiempo de carga de la bobina.
 #define Tcm 1500
 
-// Tiempo de Descarga (us).
-// Este es el tiempo que le damos a la bobina para que descargue.
-#define Td 500
+// Tiempo de Descarga Mínimo(us).
+#define Td_min 1500
+
+// Tiempo de Descarga Máximo(us).
+#define Td_max 20000
+
+// Parámetros de la recta para relacuionar Td con rpm
+const float m = 4*(Td_max - Td_min) / (MAXRPM - RPM_0);
+const float T0 = (Td_max * MAXRPM - Td_min * RPM_0) / (MAXRPM - RPM_0);
 
 // ======== Configuración de patas ========
 
@@ -130,7 +136,13 @@ unsigned long Tfd_E2;
 unsigned long Tce;
 
 // Tiempo de carga de la bobina
-int tiempoDeCarga = Tci;
+int tiempoDeCarga;
+
+// Este es el tiempo que le damos a la bobina para que descargue.
+int Td;
+
+// Tiempo actual en us
+unsigned long AhoraMicros;
 
 // Período de la señal E1
 int periodoE1;
@@ -168,6 +180,7 @@ void setup()
   estado = ESPERANDO;
   tiempoDeCarga = Tci;
   flanco_descendente = false;
+  Td = Td_max;
 
   // Depuración
   if (DEBUG)
@@ -206,7 +219,7 @@ void setup()
     lastPrint = 0;
     val = 0;
     pinMode(PC13, OUTPUT);
-    digitalWrite(PC13, val);
+    digitalWrite(PC13, HIGH);
   }
 }
 
@@ -226,24 +239,13 @@ void loop()
       Serial.print(". Tiempo de carga: ");
       Serial.print(tiempoDeCarga);
       Serial.println("us");
-      val = !val;
-      digitalWrite(PC13, val);
+      // val = !val;
+      // digitalWrite(PC13, val);
     }
   }
 
   // Rutina principal
-  switch (regimen_motor)
-  {
-  case BAJA:
-    fsm_baja();
-    break;
-  case MEDIA:
-    fsm_media();
-    break;
-  //TODO Gestionar los regímenes de MEDIA y ALTA
-  default:
-    break;
-  }
+  fsm();
 }
 
 /* Función para convertir de Período (us) de E1 a rpm del motor
@@ -252,153 +254,143 @@ void loop()
 */
 int periodo2rpm(int periodo)
 {
+  // Calcular las RPMs
   int value = 30e6 / periodo;
   if (value < RPM_0)
   {
     value = RPM_0;
   }
-  if (value > MAXRMP)
+  if (value > MAXRPM)
   {
-    value = MAXRMP;
+    value = MAXRPM;
   }
+  // Calcular el tiempo de descarga
+  Td = T0 - m * value;
+  if (Td > Td_max)
+  {
+    Td = Td_max;
+  }
+  else if (Td < Td_min)
+  {
+    Td = Td_min;
+  }
+
   return value;
 }
 
-// Función para controlar el régimen de trabajo en velocodades bajas
-void fsm_baja()
+// Pasar al estado cargando
+void flancoE1detectado()
 {
-  unsigned long AhoraMicros;
-  switch (estado)
-  {
-  case ESPERANDO:
-    AhoraMicros = micros();
-    if (detector_E1.detect_falling())
-    {
-      digitalWrite(S, CARGA);
-      estado = CARGANDO;
-      periodoE1 = AhoraMicros - Tfd_E1;
-      Tfd_E1 = AhoraMicros;
-      Tce = AhoraMicros;
-      rpm = periodo2rpm(periodoE1);
-    }
-    // if (detector_E1.detect_rising())
-    // {
-    //   Tfa_E1 = AhoraMicros;
-    // }
-    break;
-
-  case CARGANDO:
-    AhoraMicros = micros();
-    if (false) //detector_E2.detect_falling())
-    {
-      if ((AhoraMicros - Tce) < Tcc)
-      {                            // Vigilar la carga de la bobina en busca de CC
-        digitalWrite(S, DESCARGA); // Desconectar
-        estado = CORTOCIRCUITO;
-        digitalWrite(CC_BOBINA_PIN, HIGH);
-        Tce = AhoraMicros;
-      }
-      Tfd_E2 = AhoraMicros;
-      int TiempoDeCargaDetectado = Tfd_E2 - Tce; // asumimos que no hubo CC
-      actualizarTiempoDeCarga(TiempoDeCargaDetectado);
-    }
-    if ((AhoraMicros - Tce) > tiempoDeCarga)
-    {
-      estado = DESCARGANDO;
-      digitalWrite(S, DESCARGA); // Desconectar
-      Tce = AhoraMicros;
-    }
-    break;
-
-  case DESCARGANDO:
-    if ((micros() - Tce) > Td)
-    {
-      if (rpm > LIMITE_BAJA)
-      {
-        regimen_motor = MEDIA;
-      }
-      estado = ESPERANDO;
-    }
-    break;
-
-  default:
-    break;
-  }
+  // Actualizar el período
+  periodoE1 = AhoraMicros - Tfd_E1;
+  Tfd_E1 = AhoraMicros;
+  flanco_descendente = true;
 }
 
-// Función para controlar el régimen de trabajo en velocodades medias
-void fsm_media()
+// Pasar al estado cargando
+void cargarBobina()
 {
-  unsigned long AhoraMicros;
+  digitalWrite(S, CARGA);
+  estado = CARGANDO;
+  Tce = AhoraMicros;
+}
+
+// Función para controlar el sistema
+void fsm()
+{
+  AhoraMicros = micros();
   switch (estado)
   {
   case ESPERANDO:
-    AhoraMicros = micros();
-    if (detector_E1.detect_rising())
+    if (detector_E1.detect_falling())
     {
-      // Tener cuidado con Tfa_E1 que puede no haberse usado nunca
-      int periodo = AhoraMicros - Tfa_E1;
-      if (periodo < (1.5 * periodoE1))
+      cargarBobina();
+      flancoE1detectado();
+    }
+    if (regimen_motor == MEDIA)
+    {
+      if (AhoraMicros > tiempoEstimado)
       {
-        periodoE1 = periodo;
+        cargarBobina();
       }
-      estado = CALCULANDO;
-      Tfa_E1 = AhoraMicros;
-      Tce = AhoraMicros;
-      rpm = periodo2rpm(periodoE1);
-      // En este momento habría que empezar a cargar para disparar
-      // en flanco descendende de E1
-      tiempoEstimado = Tfd_E1 + periodoE1 - tiempoDeCarga;
     }
     break;
-  case CALCULANDO:
-    AhoraMicros = micros();
-    monitorearPMS(AhoraMicros);
-    if ((AhoraMicros > tiempoEstimado) || flanco_descendente)
-    {
-      digitalWrite(S, CARGA);
-      estado = CARGANDO;
-      Tce = AhoraMicros;
-    }
-    break;
+
   case CARGANDO:
-    AhoraMicros = micros();
+    // if (false) //detector_E2.detect_falling())
+    // {
+    //   if ((AhoraMicros - Tce) < Tcc)
+    //   {                            // Vigilar la carga de la bobina en busca de CC
+    //     digitalWrite(S, DESCARGA); // Desconectar
+    //     estado = CORTOCIRCUITO;
+    //     digitalWrite(CC_BOBINA_PIN, HIGH);
+    //     Tce = AhoraMicros;
+    //   }
+    //   Tfd_E2 = AhoraMicros;
+    //   int TiempoDeCargaDetectado = Tfd_E2 - Tce; // asumimos que no hubo CC
+    //   actualizarTiempoDeCarga(TiempoDeCargaDetectado);
+    // }
     if (((AhoraMicros - Tce) > tiempoDeCarga) && flanco_descendente)
     {
       estado = DESCARGANDO;
       digitalWrite(S, DESCARGA); // Desconectar
       Tce = AhoraMicros;
       flanco_descendente = false;
+
+      if (DEBUG)
+      { // Monitoreamos el tiempo de espera
+        digitalWrite(PC13, HIGH);
+      }
     }
-   monitorearPMS(AhoraMicros);
-    break;
-  case DESCARGANDO:
-    if ((micros() - Tce) > Td)
+    if (!flanco_descendente)
     {
-      if (rpm > LIMITE_MEDIA)
+      if (detector_E1.detect_falling())
       {
-        regimen_motor = ALTA;
+        flancoE1detectado();
       }
-      else if (rpm < (LIMITE_BAJA - BRECHA_rpm))
-      {
-        regimen_motor = BAJA;
-      }
-      estado = ESPERANDO;
     }
     break;
+
+  case DESCARGANDO:
+    if ((AhoraMicros - Tce) > Td)
+    {
+      // Calcular las RPMs del motor
+      rpm = periodo2rpm(periodoE1);
+      // Calcular el próximo inicio de carga
+      tiempoEstimado = Tfd_E1 + periodoE1 - tiempoDeCarga;
+      // Seleccionar el régimen adecuado a partir de las RPMs
+      switch (regimen_motor)
+      {
+      case BAJA:
+        if (rpm > LIMITE_BAJA)
+        {
+          regimen_motor = MEDIA;
+        }
+        break;
+      case MEDIA:
+        if (rpm > LIMITE_MEDIA)
+        {
+          regimen_motor = ALTA;
+        }
+        else if (rpm < (LIMITE_BAJA - BRECHA_rpm))
+        {
+          regimen_motor = BAJA;
+        }
+        break;
+      default:
+        break;
+      }
+      // Próximo estado
+      estado = ESPERANDO;
+      if (DEBUG)
+      { // Monitoreamos el tiempo de espera
+        digitalWrite(PC13, LOW);
+      }
+    }
+    break;
+
   default:
     break;
-  }
-}
-
-// Función para monitorear el momento donde debió hacerse el disparo
-void monitorearPMS(unsigned long AhoraMicros)
-{
-  if (detector_E1.detect_falling())
-  {
-    Tfd_E1 = AhoraMicros;
-    errorPerido = tiempoEstimado - AhoraMicros;
-    flanco_descendente = true;
   }
 }
 
