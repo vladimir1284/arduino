@@ -9,8 +9,8 @@ import pickle
 data_fname = "stored_data.p"
 fig_fname = 'logic.eps'
 LA_port = "/dev/ttyACM0"  # linux DFU
-# real = True
-real = False
+real = True
+#real = False
 
 pinChanged = []
 usTime = []
@@ -40,11 +40,12 @@ def store_data():
         
     data = [initialState, samples, pinChanged, usTime]
     pickle.dump(data, open(data_fname, "wb"))
+    return data
     
        
 # Get data from the selected source    
 if (real):
-    store_data()
+    [initialState, samples, pinChanged, usTime] = store_data()
 else:
     [initialState, samples, pinChanged, usTime] = pickle.load(open(data_fname , "rb"))
     
@@ -106,7 +107,7 @@ strTicks = np.array(strTicks)
 color_pallete = ['b', 'r', 'g', 'k']
 legend_array = ["E1", "","S"]
 ylines = [0, 1.5, 3, 4.5]
-img = plt.figure(figsize=(50,8))
+img = plt.figure(figsize=(30,10))
 # my_lines('y', [ylines[n]], color='.5', linewidth=0.5)      
 # my_lines('x', t, color='.5', linewidth=0.5)
  
@@ -135,5 +136,5 @@ for n in range(4):
         # plt.ylim([-0.5, 6])
         # plt.xticks(t,strTicks,fontsize=3)               
 
-plt.show()
+#plt.show()
 img.savefig(fig_fname)   
