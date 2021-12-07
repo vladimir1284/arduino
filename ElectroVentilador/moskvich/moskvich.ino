@@ -6,6 +6,10 @@
 
 TTVout TV;
 
+RPM rpm_meter = RPM();
+
+GPS gps_controller = GPS(&Serial3);
+
 unsigned int lastUpdated = 0;
 int speed, temp;
 
@@ -24,7 +28,7 @@ ElectroController controller = ElectroController();
 Configs cfgs = Configs(&TV, &screenTask, &btn);
 
 // HMI
-ThermHMI hmi = ThermHMI(&TV, &screenTask, &cfgs, &controller);
+ThermHMI hmi = ThermHMI(&TV, &gps_controller, &rpm_meter, &screenTask, &cfgs, &controller);
 
 void setup(void)
 {
@@ -42,6 +46,7 @@ void setup(void)
   // Setups
   btn.init(BTN_PIN);
   cfgs.init();
+  rpm_meter.init(PIN_RPM);
 
   // Init the controller
   controller.init(PIN_NTC, PIN_BUZ, PIN_FAN0, PIN_FAN1,
@@ -69,6 +74,8 @@ void setup(void)
 
 void loop()
 {
+  rpm_meter.run();
+  gps_controller.run();
   btn.run();
   cfgs.run();
   if (screenTask != TEST)

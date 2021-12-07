@@ -1,24 +1,29 @@
 #include "hmi.h"
 
 // Constructor
-ThermHMI::ThermHMI(TTVout *tft, int *st, Configs *cfgs, ElectroController *controller)
+ThermHMI::ThermHMI(TTVout *tft, GPS *gps, RPM *rpm,int *st, Configs *cfgs, ElectroController *controller)
 {
   _tft = tft;
+  _gps = gps;
+  _rpm = rpm;
   _cfgs = cfgs;
   _ctrl = controller;
   lastFanSpeed = FAN_STOP;
   lastTimeTempUdated = 0;
   lastTimeFanChanged = 0;
   pendingClear = false;
+  dots = false;
   screenTask = st;
   indicator_color = WHITE;
   lastVoltage = 0;
+  lastRPM = 0;
+  lastSpeed = 0;
 }
 
 //--------------------------------------------------------------------
 void ThermHMI::showConfigs()
 {
-  // Prepare text  
+  // Prepare text
   _tft->select_font(font6x8);
 
   // Update
@@ -49,6 +54,84 @@ void ThermHMI::drawBateryIcon(int color)
 }
 
 //--------------------------------------------------------------------
+void ThermHMI::updateSpeed(int speed)
+{
+  int xPos = Xspeed;
+
+  // speed = random(120);
+  // Update text
+  if (speed != lastSpeed)
+  {
+    _tft->select_font(Arial_round_16x24);
+
+    // Clear
+    _tft->set_cursor(Xspeed, Yspeed);
+    _tft->print("000");
+
+    // Update
+    if (speed < 100)
+    {
+      if (speed > 9)
+      {
+        xPos += 16;
+      }
+      else
+      {
+        xPos += 32;
+      }
+    }
+    _tft->set_cursor(xPos, Yspeed);
+    _tft->print(speed);
+
+    lastSpeed = speed;
+  }
+}
+
+//--------------------------------------------------------------------
+void ThermHMI::updateRPM(int rpm)
+{
+  int xPos = Xrpm;
+  // rpm = random(5000);
+
+  // Update text
+  if (1) //abs(rpm - lastRPM) > 10)
+  {
+    _tft->select_font(font6x8);
+
+    // Clear
+    _tft->set_cursor(Xrpm, Yrpm);
+    _tft->print("    ");
+
+    // Update
+    if (rpm < 1000)
+    {
+      if (rpm > 99)
+      {
+        xPos += 6;
+      }
+      else
+      {
+        if (rpm > 9)
+        {
+          xPos += 12;
+        }
+        else
+        {
+          xPos += 18;
+        }
+      }
+    }
+
+    drawBar(rpm);
+
+    _tft->set_cursor(xPos, Yrpm);
+    _tft->print(rpm);
+
+    lastRPM = rpm;
+  }
+}
+
+//--------------------------------------------------------------------
 void ThermHMI::updateVoltage(float voltage)
 {
   int color;
@@ -70,7 +153,7 @@ void ThermHMI::updateVoltage(float voltage)
 
   // Update text
   if (abs(voltage - lastVoltage) > 0.1)
-  { 
+  {
     _tft->select_font(font6x8);
 
     // Clear
@@ -87,18 +170,76 @@ void ThermHMI::updateVoltage(float voltage)
 }
 
 //--------------------------------------------------------------------
+void ThermHMI::printDateTime(TinyGPSDate &d, TinyGPSTime &t)
+{
+  char sz[32];
+
+  if (d.isValid())
+  {
+    _tft->select_font(font6x8);
+    // Clear
+    _tft->set_cursor(Xdate, Ydatetime);
+    _tft->print("         ");
+
+    // Update
+    _tft->set_cursor(Xdate, Ydatetime);
+
+    sprintf(sz, "%02d/%02d/%02d ", d.day(), d.month(), d.year());
+    // sprintf(sz, "09/08/20 ");
+    _tft->print(sz);
+  }
+
+  if (t.isValid())
+  {
+    _tft->select_font(font6x8);
+    // Clear
+    _tft->set_cursor(Xtime, Ydatetime);
+    _tft->print("     ");
+
+    // Update
+    _tft->set_cursor(Xtime, Ydatetime);
+    if (dots)
+    {
+      sprintf(sz, "%02d %02d", t.hour(), t.minute());
+      // sprintf(sz, "10 23");
+      dots = false;
+    }
+    else
+    {
+      sprintf(sz, "%02d:%02d", t.hour(), t.minute());
+      // sprintf(sz, "10:23");
+      dots = true;
+    }
+    _tft->print(sz);
+  }
+}
+
+//--------------------------------------------------------------------
 void ThermHMI::drawHMItemplate()
 {
   _tft->clear_screen();
   drawIcon();
   updateVoltage(0); // Forcing drawing with a different value
-  //drawFan();
+  // drawFan();
+  drawUnits();
   showConfigs();
   acON = false;
   overPressureON = false;
   alarmON = false;
   speed0ON = false;
   speed1ON = false;
+}
+
+//--------------------------------------------------------------------
+void ThermHMI::drawUnits()
+{
+  _tft->select_font(font6x8);
+
+  _tft->set_cursor(Xspeed + 48, Yspeed + 12);
+  _tft->print("Km/h");
+
+  _tft->set_cursor(Xrpm, Yrpm + 10);
+  _tft->print(" rpm");
 }
 
 //--------------------------------------------------------------------
@@ -210,6 +351,9 @@ void ThermHMI::update()
           updateTemp(tempValue);
         }
         updateVoltage(voltage);
+        updateSpeed(_gps->gps.speed.kmph());
+        updateRPM(_rpm->getRPM());
+        printDateTime(_gps->gps.date, _gps->gps.time);
         updateStatusLabels();
         lastTimeTempUdated = millis();
       }
@@ -254,13 +398,29 @@ void ThermHMI::showStatusLabels()
   //             AClabel, Xlabel, Ylabel);
   // updateLabel(&overPressureON, true, WHITE,
   //             APlabel, Xlabel + DxLabel, Ylabel);
-  updateLabel(&alarmON,true, WHITE,
+  updateLabel(&alarmON, true, WHITE,
               ATlabel, Xlabel + 2 * DxLabel, Ylabel);
   // Fan speeds
+  // animateFan(SLOWdelay);
   updateLabel(&speed0ON, true,
               WHITE, Ipaso, Xlabel + DxLabel / 2, Ylabel - DyLabel);
   updateLabel(&speed1ON, true, WHITE,
               IIpaso, Xlabel + 3 * DxLabel / 2, Ylabel - DyLabel);
+
+  // Speed
+  updateSpeed(100);
+
+  // RPM
+  updateRPM(3000);
+
+  // DateTime
+  char sz[32];
+  _tft->set_cursor(Xdate, Ydatetime);
+  sprintf(sz, "09/08/20 ");
+  _tft->print(sz);
+  _tft->set_cursor(Xtime, Ydatetime);
+  sprintf(sz, "10:23");
+  _tft->print(sz);
 }
 
 //--------------------------------------------------------------------
@@ -289,7 +449,7 @@ void ThermHMI::updateLabel(bool *previousSatus, bool status,
     {
       _tft->set_cursor(x, y);
       _tft->select_font(font6x8);
-      
+
       _tft->print("  ");
       *previousSatus = false;
     }
@@ -299,7 +459,7 @@ void ThermHMI::updateLabel(bool *previousSatus, bool status,
     if (status)
     {
       _tft->set_cursor(x, y);
-      
+
       _tft->select_font(font6x8);
       _tft->print(label);
       *previousSatus = true;
@@ -341,7 +501,6 @@ void ThermHMI::updateTemp(int value)
 {
   int xShift = 56;
 
-  drawBar(value);
   current_value = value;
 
   if (value > 99)
@@ -358,14 +517,14 @@ void ThermHMI::updateTemp(int value)
       pendingClear = false;
     }
   }
-  
+
   _tft->select_font(Arial_round_16x24);
   _tft->set_cursor(Xicon - xShift, Yicon - 12);
   _tft->print(value);
 }
 
 //--------------------------------------------------------------------
-void ThermHMI::drawBar(int temp)
+void ThermHMI::drawBar(int value)
 {
   int i, color, k;
   float iValue;
@@ -373,7 +532,7 @@ void ThermHMI::drawBar(int temp)
   for (i = 0; i < nRegs; i++)
   {
     iValue = i * (MAXindicator - MINindicator) / nRegs + MINindicator;
-    if (iValue > temp)
+    if (iValue > value)
     {
       color = BLACK;
     }
@@ -383,7 +542,7 @@ void ThermHMI::drawBar(int temp)
     }
     for (k = regPtrs[i]; k < regPtrs[i + 1]; k++)
     {
-      _tft->set_pixel(Xcoords[k]+30, Ycoords[k]-20, color);
+      _tft->set_pixel(Xcoords[k] + 30, Ycoords[k] - 20, color);
     }
   }
 }

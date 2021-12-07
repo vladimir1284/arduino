@@ -43,8 +43,9 @@
 #define PIN_FAN0    PA9
 #define PIN_FAN1    PA8
 #define BTN_PIN     PA10
-#define PIN_A       PA15
-#define PIN_B       PB5
+#define PIN_A       -1
+#define PIN_RPM     PA15
+#define PIN_B       -1
 
 // Signals controling directly the fan
 #define WAIT2ACTIVATE 250 // ms
@@ -122,9 +123,15 @@ PROGMEM const char mainText[MAIN_ITEMS][STRING_LENGTH] = {" Temperatura",
                                                           "   Voltaje  ",
                                                           "    Prueba  "};
 
+// --------------- GPS ------------------
+#define GPSBaud 9600
+#define READ_GPS_DELAY 1000 // ms Time for continuosly collecting serial data from GPS module
+
+// --------------------------------------                                                          
+
 // ---------- HMI --------------
 // Thermometer icon
-#define Xicon 150
+#define Xicon 200
 #define Yicon 98
 #define Rtherm 3
 #define Htherm 12
@@ -153,7 +160,7 @@ PROGMEM const char mainText[MAIN_ITEMS][STRING_LENGTH] = {" Temperatura",
 
 // Configs
 #define Xlabel  80
-#define Ylabel  74
+#define Ylabel  100
 #define DxLabel 18
 #define DyLabel 18
 #define Ipaso "I"
@@ -171,8 +178,6 @@ PROGMEM const char mainText[MAIN_ITEMS][STRING_LENGTH] = {" Temperatura",
 #define NEEDLEbase 3
 #define GAUGEx 105
 #define GAUGEy 123
-#define MAXindicator 100
-#define MINindicator 50
 
 // Temperature refresh interval
 #define TEMP_DELAY 500 // ms
@@ -180,12 +185,27 @@ PROGMEM const char mainText[MAIN_ITEMS][STRING_LENGTH] = {" Temperatura",
 #define RTEMP 6750 // ohms
 
 // ----------- Fan --------------
-#define Xfan 120
+#define Xfan 180
 #define Yfan 0
 #define Wfan 39
 #define Hfan 39
 #define SLOWdelay 500 // ms
 #define FASTdelay 250 // ms
+
+// ----------- DATETIME --------------
+#define Xdate 80
+#define Xtime 134
+#define Ydatetime 0
+
+// ----------- Speed --------------
+#define Xspeed 100
+#define Yspeed 50
+
+// ----------- RPM --------------
+#define Xrpm 8
+#define Yrpm 90
+#define MAXindicator 5000
+#define MINindicator 800
 
 // -----------------------------
 

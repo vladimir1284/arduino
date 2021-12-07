@@ -3,6 +3,8 @@
 #include "configs.h"
 #include "bar_points.h"
 #include "controller.h"
+#include "gps.h"
+#include "rpm.h"
 #include "Arial_round_16x24.h"
 
 #define ORANGE_COLOR  ST7735_YELLOW
@@ -10,7 +12,7 @@
 class ThermHMI {
 
  public:
-  ThermHMI(TTVout *tft, int *st, Configs *cfgs, ElectroController *controller);
+  ThermHMI(TTVout *tft, GPS *gps, RPM *rpm, int *st, Configs *cfgs, ElectroController *controller);
 
   void  drawHMItemplate(),
         update(),
@@ -18,6 +20,8 @@ class ThermHMI {
 
  private:
   TTVout  *_tft;
+  GPS  *_gps;
+  RPM  *_rpm;
   Configs *_cfgs;
   ElectroController *_ctrl;
   void animateFan(int speed),
@@ -25,14 +29,18 @@ class ThermHMI {
        drawFan(),
        drawIcon(),
        showConfigs(),
+       drawUnits(),
        drawBar(int percent),
        drawBateryIcon(int color),
        drawMarks(int color),
        drawNeedle(int value, int color),
        updateTemp(int value),
        updateVoltage(float voltage),
+       updateSpeed(int speed),
+       updateRPM(int value),
        updateStatusLabels(),
        showStatusLabels(),
+       printDateTime(TinyGPSDate &d, TinyGPSTime &t),
        updateLabel(bool *previousSatus, bool status,
                            int color, char *label, int x, int y),
        showError(int error_code);
@@ -45,11 +53,14 @@ class ThermHMI {
   int current_value, 
       fan, 
       last_error_shown, 
+      lastSpeed,
+      lastRPM,
       lastFanSpeed,
       indicator_color;
   int *screenTask;
   bool pendingClear,
         batON,
+        dots,
         acON,
         overPressureON,
         alarmON,
